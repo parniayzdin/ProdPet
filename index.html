@@ -1,40 +1,428 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f5f6fa" />
-    <title>Productivity — Your focus, in motion</title>
+    <meta name="theme-color" content="#f5f4ee" />
+    <title>Productivity — A little focus goes a long way</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <aside class="sidebar">
-      <a class="brand" href="#"><span class="brand-icon">p</span> productivity<span class="brand-dot">.</span></a>
-      <div class="nav-label">YOUR WORKSPACE</div>
-      <a class="nav active" href="#overview"><span>◫</span> Overview</a>
-      <a class="nav" href="#focus"><span>◷</span> Focus session</a>
-      <a class="nav" href="#activity"><span>↗</span> Activity</a>
-      <a class="nav" href="#rewards"><span>✧</span> Rewards</a>
-      <div class="sidebar-bottom"><div class="little-orbit">✦</div><strong>Small steps. Real progress.</strong><p>Make a little room for your best work.</p><div class="local-badge">● Saved on this device</div></div>
-    </aside>
-    <main id="overview">
-      <header><span class="breadcrumb">Workspace <span>/</span> Overview</span><span id="date-label"></span></header>
-      <section class="page-title"><div><div class="eyebrow">LET’S MAKE TODAY COUNT</div><h1>Your productivity<span>.</span></h1><p>A little more intention. A little less distraction.</p></div><span class="status-pill"><i></i> Your workspace is ready</span></section>
-      <section class="stats" aria-label="Productivity summary">
-        <article class="card stat"><div class="stat-label">Focus time today <span>◷</span></div><div class="stat-value" id="focus-total">0m</div><div class="stat-note">Time in completed sessions</div></article>
-        <article class="card stat"><div class="stat-label">Points earned <span>✧</span></div><div class="stat-value" id="points-total">0 <small>pts</small></div><div class="stat-note purple">10 points per focused minute</div></article>
-        <article class="card stat"><div class="stat-label">Daily goal <span>◎</span></div><div class="stat-value" id="goal-total">0<small> / 120 min</small></div><div class="mini-track"><div id="goal-bar"></div></div></article>
-        <article class="card stat"><div class="stat-label">Current streak <span>ϟ</span></div><div class="stat-value" id="streak-total">0 <small>days</small></div><div class="stat-note">Complete a minute to count a day</div></article>
+    <header class="site-header">
+      <a class="brand" href="#dashboard" aria-label="Productivity home"
+        ><span class="brand-mark" aria-hidden="true"><i></i><i></i></span
+        >productivity<span class="brand-dot">.</span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#dashboard" data-page="dashboard">Dashboard</a
+        ><a href="#quest" data-page="quest"
+          >Focus Quest <span class="nav-spark">✦</span></a
+        ><a href="#stickers" data-page="stickers">Sticker studio</a>
+      </nav>
+      <span class="points-badge"
+        ><span aria-hidden="true">✦</span>
+        <strong id="header-points">0</strong> pts</span
+      >
+    </header>
+    <main>
+      <section
+        class="page"
+        id="page-dashboard"
+        aria-labelledby="dashboard-title"
+      >
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow" id="date-label">YOUR LITTLE SPACE TO FOCUS</p>
+            <h1 id="dashboard-title">Good things take <em>focus.</em></h1>
+            <p>One task at a time. Your desk buddy is in.</p>
+          </div>
+          <span class="device-status"><i></i> Robot offline</span>
+        </div>
+        <div class="dashboard-grid">
+          <section class="panel focus-panel" aria-labelledby="focus-title">
+            <div class="panel-heading">
+              <h2 id="focus-title">Let’s get into it.</h2>
+              <span id="focus-state">Ready when you are</span>
+            </div>
+            <label class="sr-only" for="task">What are you working on?</label
+            ><input
+              id="task"
+              maxlength="120"
+              placeholder="What are you working on?"
+              autocomplete="off"
+            />
+            <div
+              class="duration-picker"
+              role="group"
+              aria-label="Focus session duration"
+            >
+              <button data-duration="15">15 min</button
+              ><button data-duration="25" aria-pressed="true">25 min</button
+              ><button data-duration="50">50 min</button>
+            </div>
+            <div class="timer-wrap">
+              <div
+                class="timer"
+                id="timer"
+                role="timer"
+                aria-label="Time remaining"
+              >
+                25:00
+              </div>
+              <span id="timer-subtitle">A fresh start.</span>
+            </div>
+            <div class="timer-actions">
+              <button id="start" class="button primary">
+                ▶ Start focusing</button
+              ><button id="finish" class="button secondary" disabled>
+                Finish
+              </button>
+            </div>
+            <p class="quiet-note">Manual focus timer · 10 points per minute</p>
+          </section>
+          <section class="buddy-panel" aria-labelledby="buddy-title">
+            <div class="buddy-top">
+              <span class="eyebrow">YOUR DESK BUDDY</span
+              ><span class="decor-star" aria-hidden="true">✧</span>
+            </div>
+            <div class="buddy-art">
+              <span class="orbit" aria-hidden="true"></span
+              ><span class="orbit orbit-two" aria-hidden="true"></span
+              ><img
+                id="buddy-image"
+                src="/robots/hello.png"
+                alt="Your ivory cube robot waving hello"
+                width="1280"
+                height="1280"
+              /><span class="little-star" aria-hidden="true">✦</span>
+            </div>
+            <div class="buddy-message">
+              <h2 id="buddy-title">
+                You bring the ideas.<br />I’ll bring the company.
+              </h2>
+              <a href="#stickers" class="text-link">Meet your buddy ↗</a>
+            </div>
+          </section>
+        </div>
+        <section class="stats-strip" aria-label="Your progress">
+          <div>
+            <span>Focus today</span
+            ><strong id="focus-total">0 <small>min</small></strong>
+          </div>
+          <div>
+            <span>Total points</span
+            ><strong id="points-total">0 <small>pts</small></strong>
+          </div>
+          <div>
+            <span>Daily streak</span
+            ><strong id="streak-total">0 <small>days</small></strong>
+          </div>
+          <a href="#quest" class="quest-teaser"
+            ><span class="teaser-star" aria-hidden="true">✦</span>
+            <div>
+              <strong>A little work. A new world.</strong
+              ><span>Play Focus Quest ↗</span>
+            </div></a
+          >
+        </section>
+        <div class="history-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Your week</h2>
+              <span><strong id="week-total">0</strong> min</span>
+            </div>
+            <div
+              id="chart"
+              class="chart"
+              aria-label="Focus time for the last seven days"
+            ></div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Recent sessions</h2>
+              <span id="session-count">0 completed</span>
+            </div>
+            <div id="session-list"></div>
+          </section>
+        </div>
       </section>
-      <section class="primary-grid">
-        <article class="card focus-card" id="focus"><div class="card-heading"><h2>Focus session</h2><span class="tag">FOCUS SESSION</span></div><p class="muted">One task. A fresh start. You’ve got this.</p><label class="task-label" for="task">What are you working on?</label><input id="task" maxlength="120" placeholder="e.g. Build the dashboard" autocomplete="off" /><div class="timer-ring"><svg viewBox="0 0 220 220" aria-hidden="true"><circle class="ring-bg" cx="110" cy="110" r="98"/><circle id="ring-progress" cx="110" cy="110" r="98"/></svg><div class="timer-content"><span id="timer">25:00</span><span id="timer-caption">A little focus goes a long way</span></div></div><div class="duration-options" aria-label="Session length"><button data-minutes="15">15 min</button><button data-minutes="25" class="selected" aria-pressed="true">25 min</button><button data-minutes="50">50 min</button></div><div class="timer-actions"><button class="primary-button" id="start">▶ Start focusing</button><button class="secondary-button" id="finish" disabled>Finish</button></div><p class="session-note" id="session-note">Manual timer · 10 points per minute</p></article>
-        <div class="right-column"><article class="card activity-card" id="activity"><div class="card-heading"><h2>This week</h2><span class="tag">LAST 7 DAYS</span></div><div class="chart-summary"><strong id="week-total">0</strong><span>focused minutes</span></div><div id="chart" class="chart" aria-label="Focus minutes over the last seven days"></div><div class="chart-footer"><span><i></i> Completed focus time</span><span>Every minute counts.</span></div></article><article class="card companion"><div class="companion-art" aria-hidden="true"><div class="robot-face"><span></span><span></span></div><div class="robot-feet">▰ &nbsp; ▰</div></div><div><span class="tag">YOUR DESK COMPANION</span><h2>Robot connection</h2><p>Robot sounds and vibration will connect here when your hardware is ready.</p><span class="offline"><i></i> Hardware not connected</span></div></article></div>
+      <section
+        class="page"
+        id="page-quest"
+        aria-labelledby="quest-title"
+        hidden
+      >
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">FOCUS QUEST</p>
+            <h1 id="quest-title">
+              Small sessions.<br /><em>A world of your own.</em>
+            </h1>
+            <p>Study a little. Earn points. Make your buddy’s room a home.</p>
+          </div>
+          <span class="level-badge" id="level-badge"
+            >Level 1 · New beginnings</span
+          >
+        </div>
+        <div class="quest-grid">
+          <section class="room-panel" aria-label="Your robot’s room">
+            <div class="room-top">
+              <span>THE LITTLE STUDY</span
+              ><span id="room-count">0 / 5 discoveries</span>
+            </div>
+            <div class="room-scene">
+              <div class="room-wall"></div>
+              <div class="room-floor"></div>
+              <div class="room-window"><span></span></div>
+              <div class="room-rug"></div>
+              <div class="room-desk">
+                <div class="desk-top"></div>
+                <div class="desk-leg one"></div>
+                <div class="desk-leg two"></div>
+              </div>
+              <div class="room-item plant" data-room-item="plant" hidden>
+                <div class="stem"></div>
+                <i></i><i></i><i></i>
+                <div class="pot"></div>
+              </div>
+              <div class="room-item books" data-room-item="books" hidden>
+                <i></i><i></i><i></i>
+              </div>
+              <div class="room-item lamp" data-room-item="lamp" hidden>
+                <i></i><span></span>
+              </div>
+              <div class="room-item art" data-room-item="art" hidden>
+                <span>✦</span>
+              </div>
+              <div class="room-item stars" data-room-item="stars" hidden>
+                ✧ <span>✦</span> ✧
+              </div>
+              <img
+                id="quest-robot"
+                src="/robots/hello.png"
+                alt="Your robot in its study room"
+                width="1280"
+                height="1280"
+              />
+            </div>
+            <div class="room-bottom">
+              <div>
+                <strong id="room-next">A plant to start with.</strong>
+                <p id="room-progress-text">
+                  50 points to your first discovery.
+                </p>
+              </div>
+              <div
+                class="room-progress"
+                role="progressbar"
+                aria-label="Progress to next room item"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span id="room-progress-fill"></span>
+              </div>
+            </div>
+          </section>
+          <section class="panel mission-panel">
+            <p class="eyebrow">PICK YOUR NEXT MISSION</p>
+            <h2>A bit of focus.<br />A little reward.</h2>
+            <div class="mission-options">
+              <button data-mission="5" aria-pressed="true">
+                <span class="mission-icon">↗</span
+                ><span
+                  ><strong>Quick win</strong
+                  ><small>5 min · +25 bonus</small></span
+                ><i></i></button
+              ><button data-mission="15" aria-pressed="false">
+                <span class="mission-icon">◎</span
+                ><span
+                  ><strong>Find your flow</strong
+                  ><small>15 min · +75 bonus</small></span
+                ><i></i></button
+              ><button data-mission="25" aria-pressed="false">
+                <span class="mission-icon">✦</span
+                ><span
+                  ><strong>Deep dive</strong
+                  ><small>25 min · +150 bonus</small></span
+                ><i></i>
+              </button>
+            </div>
+            <label class="sr-only" for="quest-task">Your mission task</label
+            ><input
+              id="quest-task"
+              placeholder="What will you work on?"
+              maxlength="120"
+            />
+            <div class="quest-live" id="quest-live" hidden>
+              <span id="quest-countdown">05:00</span>
+              <p id="quest-live-label">Mission in progress</p>
+            </div>
+            <button class="button primary" id="quest-start">
+              Start mission →</button
+            ><button class="button secondary" id="quest-finish" hidden>
+              End session
+            </button>
+            <p class="quiet-note" id="mission-note">
+              Finish the full timer to earn your bonus.
+            </p>
+          </section>
+        </div>
+        <section class="unlock-section">
+          <div class="panel-heading">
+            <h2>Little things to work toward</h2>
+            <span>Unlocks automatically</span>
+          </div>
+          <div class="unlock-grid" id="unlock-grid"></div>
+        </section>
       </section>
-      <section class="bottom-grid"><article class="card" id="recent"><div class="card-heading"><h2>Recent sessions</h2><span class="tag">YOUR PROGRESS</span></div><div id="session-list"></div></article><article class="card rewards" id="rewards"><div class="card-heading"><h2>Rewards</h2><span>✧</span></div><div class="reward-content"><div class="reward-icon">✦</div><div><strong id="level-name">Finding your rhythm</strong><p id="reward-copy">Earn your first 100 points to reach First Spark.</p></div></div><div class="reward-track"><div id="reward-progress"></div></div><div class="reward-meta"><span id="reward-points">0 / 100 pts</span><span id="next-level">First Spark ↗</span></div></article></section>
-      <footer><span>Camera AI not connected</span></footer>
-      <div id="announcement" class="toast" role="status" aria-live="polite"></div>
+      <section
+        class="page"
+        id="page-stickers"
+        aria-labelledby="stickers-title"
+        hidden
+      >
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">STICKER STUDIO</p>
+            <h1 id="stickers-title">
+              Same buddy.<br /><em>Every little mood.</em>
+            </h1>
+            <p>Your real robot, with a little more personality.</p>
+          </div>
+          <span class="level-badge">3 digital stickers</span>
+        </div>
+        <div class="sticker-grid">
+          <article class="sticker-card">
+            <div class="sticker-art mint">
+              <img
+                src="/robots/hello.png"
+                alt="Cartoon robot waving"
+                width="1280"
+                height="1280"
+              />
+            </div>
+            <div class="sticker-info">
+              <div>
+                <h2>Hey, you.</h2>
+                <p>Ready for a fresh start.</p>
+              </div>
+              <a
+                href="/robots/hello.png"
+                download="robot-hello.png"
+                class="download"
+                aria-label="Download waving robot PNG"
+                >↓</a
+              >
+            </div>
+          </article>
+          <article class="sticker-card">
+            <div class="sticker-art sand">
+              <img
+                src="/robots/study.png"
+                alt="Cartoon robot reading a mint book"
+                width="1280"
+                height="1280"
+              />
+            </div>
+            <div class="sticker-info">
+              <div>
+                <h2>In the zone.</h2>
+                <p>Just one more page.</p>
+              </div>
+              <a
+                href="/robots/study.png"
+                download="robot-study.png"
+                class="download"
+                aria-label="Download studying robot PNG"
+                >↓</a
+              >
+            </div>
+          </article>
+          <article class="sticker-card">
+            <div class="sticker-art lilac">
+              <img
+                src="/robots/celebrate.png"
+                alt="Cartoon robot celebrating with raised arms"
+                width="1280"
+                height="1280"
+              />
+            </div>
+            <div class="sticker-info">
+              <div>
+                <h2>Look at you go.</h2>
+                <p>Small wins count, too.</p>
+              </div>
+              <a
+                href="/robots/celebrate.png"
+                download="robot-celebrate.png"
+                class="download"
+                aria-label="Download celebrating robot PNG"
+                >↓</a
+              >
+            </div>
+          </article>
+        </div>
+        <section class="pose-preview panel">
+          <div>
+            <p class="eyebrow">A LITTLE PERSONALITY</p>
+            <h2>Try a tilt.</h2>
+            <p>A digital pose preview for your desk buddy.</p>
+            <div
+              class="pose-controls"
+              role="group"
+              aria-label="Robot pose preview"
+            >
+              <button data-direction="left" class="button secondary">
+                ← Left</button
+              ><button
+                data-direction="center"
+                class="button secondary"
+                aria-pressed="true"
+              >
+                Center</button
+              ><button data-direction="right" class="button secondary">
+                Right →
+              </button>
+            </div>
+            <p class="quiet-note">
+              Preview only · Camera and ESP32 not connected
+            </p>
+          </div>
+          <div class="pose-stage">
+            <img
+              id="pose-robot"
+              src="/robots/hello.png"
+              alt="Robot facing center"
+              width="1280"
+              height="1280"
+            />
+          </div>
+        </section>
+      </section>
+      <footer>
+        <span><i></i> Your progress stays on this device.</span
+        ><span>Camera AI &amp; hardware not connected</span>
+      </footer>
     </main>
+    <div id="announcement" class="toast" role="status" aria-live="polite"></div>
+    <dialog id="session-result" aria-labelledby="result-title">
+      <button class="dialog-close" aria-label="Close session result">×</button
+      ><img
+        src="/robots/celebrate.png"
+        width="1280"
+        height="1280"
+        alt="Your robot celebrating"
+      />
+      <p class="eyebrow">ONE LITTLE WIN</p>
+      <h2 id="result-title">You showed up.</h2>
+      <p id="result-copy"></p>
+      <strong id="result-points"></strong
+      ><button class="button primary" id="result-done">
+        Nice. Keep it going.
+      </button>
+    </dialog>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
-
