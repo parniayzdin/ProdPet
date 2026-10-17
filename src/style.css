@@ -212,6 +212,28 @@ main {
   color: var(--muted);
   margin-top: 14px;
 }
+.robot-connection {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+  max-width: 290px;
+}
+.robot-connection span {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
+.robot-connection [data-state="connected"] {
+  color: #345e4d;
+}
+@media (max-width: 600px) {
+  .robot-connection {
+    justify-items: start;
+  }
+  .robot-connection span {
+    text-align: left;
+  }
+}
 .device-status {
   font-size: 13px;
   color: #858977;

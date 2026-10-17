@@ -71,7 +71,6 @@ export function initFriends({ isBusy, onActive, onAward, notify }) {
     offset = next.serverNow - Date.now();
     room = next;
     connected = true;
-    onActive(room.status === "running");
     if (room.status === "finished") {
       focused = false;
       const me = room.players.find((p) => p.id === room.meId);
@@ -100,6 +99,7 @@ export function initFriends({ isBusy, onActive, onAward, notify }) {
             : clockText(Math.max(0, Math.ceil((room.endsAt - now) / 1000)));
   }
   function render() {
+    onActive(room?.status === "running", focused && connected);
     $("#race-setup").hidden = !!credentials;
     $("#race-room").hidden = !room;
     if (!room) return;

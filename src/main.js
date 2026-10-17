@@ -7,6 +7,7 @@ import {
   streakFor,
 } from "./focus.js";
 import { initFriends } from "./friends.js";
+import { initRobot, studyEmotion } from "./robot.js";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -20,6 +21,8 @@ let celebrated = false;
 let storageWarning = false;
 let renderedDay = dayKey(new Date());
 let raceActive = false;
+let raceFocused = false;
+const robot = initRobot(notify);
 
 function notify(message) {
   $("#announcement").textContent = message;
@@ -189,6 +192,15 @@ const timeText = (seconds) =>
   `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 function renderTimer() {
   const active = session.active;
+  robot.setEmotion(
+    studyEmotion({
+      running: session.running,
+      active: !!active,
+      celebrating: celebrated,
+      raceActive,
+      raceFocused,
+    }),
+  );
   $("#start").disabled = raceActive && !active;
   $("#quest-start").disabled = raceActive && !active;
   const remaining = active
@@ -381,8 +393,9 @@ if (restored)
 
 initFriends({
   isBusy: () => !!session.active,
-  onActive: (active) => {
+  onActive: (active, focused = false) => {
     raceActive = active;
+    raceFocused = focused;
     renderTimer();
   },
   onAward: (result) => {

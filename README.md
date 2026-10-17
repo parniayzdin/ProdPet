@@ -56,7 +56,26 @@ Race names, readiness, and focus times are shared with the room. Room membership
 
 ## Hardware and camera
 
-The team’s six STL design files remain at the repository root. Camera head tracking, ESP32 movement, sound, and vibration are not connected in this branch. No camera permissions are requested and no video is collected.
+The team’s six STL files and the original `firmware/robot_eyes/robot_eyes.ino` from `oled-eyes` are included unchanged. The dashboard can now control that firmware's OLED eyes over USB. Camera head tracking, motors, sound, and vibration are not connected. No camera permissions are requested and no video is collected.
+
+### Connect the OLED eyes
+
+1. Upload `firmware/robot_eyes/robot_eyes.ino` to the ESP32 using the team's Arduino setup. It requires Adafruit GFX and Adafruit SSD1306. The supplied sketch uses a 128×64 OLED at I2C address `0x3C`, SDA 21 and SCL 22; confirm these match your board and wiring.
+2. Close Arduino Serial Monitor so the browser can open the USB port. Use a data-capable USB cable.
+3. Open the dashboard in desktop Chrome or Edge at localhost (or HTTPS). Click **Connect robot** and select your ESP32's USB serial port. Plain HTTP LAN pages cannot use this USB feature; use localhost on the computer physically connected to the robot or deploy over HTTPS.
+4. The status remains **USB open · waiting for eyes** until the firmware replies. **Eyes connected** means the expected firmware acknowledgement arrived, not that a camera or motor connection exists. If it stays waiting, check the uploaded sketch, port, OLED wiring and power. Reloading the page requires reconnecting.
+5. Start, pause, resume, or finish a focus session. Friends races use your own focus state; disconnected/paused race tracking selects sleepy eyes. Click **Disconnect robot** when done. The OLED retains its last expression after disconnecting.
+
+| Dashboard state                            | Serial character | Firmware expression |
+| ------------------------------------------ | ---------------- | ------------------- |
+| Ready                                      | `0`              | IDLE                |
+| Studying                                   | `5`              | FOCUSED             |
+| Paused                                     | `8`              | SLEEPY              |
+| Saved session / completed race with points | `7`              | CELEBRATING         |
+
+The connection uses 115200 baud and the firmware's existing `Emotion changed to: N` acknowledgements. Commands retry once per second until acknowledged to handle board startup. This integration does not infer distraction or change productivity scores. Tests simulate USB streams, acknowledgements, resets, missing displays, and unplugging; physical hardware still needs an end-to-end check.
+
+Browser implementation reference: [Chrome Web Serial documentation](https://developer.chrome.com/docs/capabilities/serial).
 
 ## Artwork
 

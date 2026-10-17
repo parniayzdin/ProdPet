@@ -37,7 +37,13 @@
             <p class="eyebrow" id="date-label">YOUR LITTLE SPACE TO FOCUS</p>
             <h1 id="dashboard-title">Your dashboard</h1>
           </div>
-          <span class="device-status"><i></i> Robot offline</span>
+          <div class="robot-connection">
+            <button class="button secondary" id="robot-connect">
+              Connect robot</button
+            ><span id="robot-status" role="status"
+              >Robot offline · USB eyes</span
+            >
+          </div>
         </div>
         <div class="dashboard-grid">
           <section class="panel focus-panel" aria-labelledby="focus-title">
@@ -462,7 +468,7 @@
       </section>
       <footer>
         <span><i></i> Personal progress stays on this device.</span
-        ><span>Camera AI &amp; hardware not connected</span>
+        ><span>USB eye control available · Camera AI not connected</span>
       </footer>
     </main>
     <div id="announcement" class="toast" role="status" aria-live="polite"></div>
