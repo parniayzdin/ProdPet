@@ -1,10 +1,10 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f5f4ee" />
-    <title>Productivity — A little focus goes a long way</title>
+    <title>Productivity</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
@@ -18,7 +18,8 @@
         <a href="#dashboard" data-page="dashboard">Dashboard</a
         ><a href="#quest" data-page="quest"
           >Focus Quest <span class="nav-spark">✦</span></a
-        ><a href="#stickers" data-page="stickers">Sticker studio</a>
+        ><a href="#friends" data-page="friends">Friends</a
+        ><a href="#stickers" data-page="stickers">Stickers</a>
       </nav>
       <span class="points-badge"
         ><span aria-hidden="true">✦</span>
@@ -34,16 +35,15 @@
         <div class="page-heading">
           <div>
             <p class="eyebrow" id="date-label">YOUR LITTLE SPACE TO FOCUS</p>
-            <h1 id="dashboard-title">Good things take <em>focus.</em></h1>
-            <p>One task at a time. Your desk buddy is in.</p>
+            <h1 id="dashboard-title">Your dashboard</h1>
           </div>
           <span class="device-status"><i></i> Robot offline</span>
         </div>
         <div class="dashboard-grid">
           <section class="panel focus-panel" aria-labelledby="focus-title">
             <div class="panel-heading">
-              <h2 id="focus-title">Let’s get into it.</h2>
-              <span id="focus-state">Ready when you are</span>
+              <h2 id="focus-title">Focus timer</h2>
+              <span id="focus-state">Ready</span>
             </div>
             <label class="sr-only" for="task">What are you working on?</label
             ><input
@@ -98,9 +98,7 @@
               /><span class="little-star" aria-hidden="true">✦</span>
             </div>
             <div class="buddy-message">
-              <h2 id="buddy-title">
-                You bring the ideas.<br />I’ll bring the company.
-              </h2>
+              <h2 id="buddy-title">Ready to study</h2>
               <a href="#stickers" class="text-link">Meet your buddy ↗</a>
             </div>
           </section>
@@ -121,8 +119,7 @@
           <a href="#quest" class="quest-teaser"
             ><span class="teaser-star" aria-hidden="true">✦</span>
             <div>
-              <strong>A little work. A new world.</strong
-              ><span>Play Focus Quest ↗</span>
+              <strong>Your robot’s room</strong><span>Play Focus Quest ↗</span>
             </div></a
           >
         </section>
@@ -155,11 +152,8 @@
       >
         <div class="page-heading">
           <div>
-            <p class="eyebrow">FOCUS QUEST</p>
-            <h1 id="quest-title">
-              Small sessions.<br /><em>A world of your own.</em>
-            </h1>
-            <p>Study a little. Earn points. Make your buddy’s room a home.</p>
+            <h1 id="quest-title">Focus Quest</h1>
+            <p>Earn points to decorate your robot’s room.</p>
           </div>
           <span class="level-badge" id="level-badge"
             >Level 1 · New beginnings</span
@@ -226,8 +220,7 @@
             </div>
           </section>
           <section class="panel mission-panel">
-            <p class="eyebrow">PICK YOUR NEXT MISSION</p>
-            <h2>A bit of focus.<br />A little reward.</h2>
+            <h2>Choose a mission</h2>
             <div class="mission-options">
               <button data-mission="5" aria-pressed="true">
                 <span class="mission-icon">↗</span
@@ -271,7 +264,7 @@
         </div>
         <section class="unlock-section">
           <div class="panel-heading">
-            <h2>Little things to work toward</h2>
+            <h2>Room rewards</h2>
             <span>Unlocks automatically</span>
           </div>
           <div class="unlock-grid" id="unlock-grid"></div>
@@ -285,11 +278,8 @@
       >
         <div class="page-heading">
           <div>
-            <p class="eyebrow">STICKER STUDIO</p>
-            <h1 id="stickers-title">
-              Same buddy.<br /><em>Every little mood.</em>
-            </h1>
-            <p>Your real robot, with a little more personality.</p>
+            <h1 id="stickers-title">Robot stickers</h1>
+            <p>Download your robot in three poses.</p>
           </div>
           <span class="level-badge">3 digital stickers</span>
         </div>
@@ -364,45 +354,114 @@
             </div>
           </article>
         </div>
-        <section class="pose-preview panel">
+      </section>
+      <section
+        class="page"
+        id="page-friends"
+        aria-labelledby="friends-title"
+        hidden
+      >
+        <div class="page-heading">
           <div>
-            <p class="eyebrow">A LITTLE PERSONALITY</p>
-            <h2>Try a tilt.</h2>
-            <p>A digital pose preview for your desk buddy.</p>
-            <div
-              class="pose-controls"
-              role="group"
-              aria-label="Robot pose preview"
-            >
-              <button data-direction="left" class="button secondary">
-                ← Left</button
-              ><button
-                data-direction="center"
-                class="button secondary"
-                aria-pressed="true"
-              >
-                Center</button
-              ><button data-direction="right" class="button secondary">
-                Right →
-              </button>
-            </div>
-            <p class="quiet-note">
-              Preview only · Camera and ESP32 not connected
-            </p>
+            <h1 id="friends-title">Study with friends.</h1>
+            <p>Most focused time wins. Pauses don’t count.</p>
           </div>
-          <div class="pose-stage">
+          <span class="level-badge">Up to 8 friends</span>
+        </div>
+        <p id="race-error" class="race-error" role="status" hidden></p>
+        <div id="race-setup" class="race-setup">
+          <section class="panel">
+            <h2>Start a race</h2>
+            <form id="race-create-form">
+              <label for="race-name">Your name</label
+              ><input
+                id="race-name"
+                maxlength="24"
+                required
+                placeholder="Your name"
+                autocomplete="nickname"
+              /><label for="race-duration">Race length</label
+              ><select id="race-duration">
+                <option value="5">5 minutes</option>
+                <option value="15" selected>15 minutes</option>
+                <option value="25">25 minutes</option></select
+              ><button class="button primary" type="submit">Create room</button>
+            </form>
+          </section>
+          <section class="panel">
+            <h2>Join your friends</h2>
+            <form id="race-join-form">
+              <label for="join-name">Your name</label
+              ><input
+                id="join-name"
+                maxlength="24"
+                required
+                placeholder="Your name"
+                autocomplete="nickname"
+              /><label for="race-code">Room code</label
+              ><input
+                id="race-code"
+                maxlength="6"
+                minlength="6"
+                required
+                placeholder="ABC123"
+                autocapitalize="characters"
+                autocomplete="off"
+                pattern="[A-Fa-f0-9]{6}"
+              /><button class="button secondary" type="submit">
+                Join room
+              </button>
+            </form>
+          </section>
+        </div>
+        <div id="race-room" hidden>
+          <section class="panel race-toolbar">
+            <div>
+              <span class="eyebrow">ROOM CODE</span
+              ><strong id="race-room-code"></strong
+              ><button id="race-copy" class="text-link">Copy invite</button>
+            </div>
+            <div>
+              <span id="race-status" class="state-label"
+                >Waiting for friends</span
+              ><strong id="race-clock">15:00</strong>
+            </div>
+            <button id="race-leave" class="button secondary">Leave room</button>
+          </section>
+          <section class="race-result" id="race-result" role="status" hidden>
             <img
-              id="pose-robot"
-              src="/robots/hello.png"
-              alt="Robot facing center"
+              src="/robots/celebrate.png"
+              alt="Robot celebrating the race result"
               width="1280"
               height="1280"
             />
-          </div>
-        </section>
+            <div>
+              <h2 id="race-winner"></h2>
+              <p id="race-result-copy"></p>
+            </div>
+          </section>
+          <section class="panel race-board">
+            <div class="panel-heading">
+              <h2>Live standings</h2>
+              <span id="race-player-count"></span>
+            </div>
+            <ol id="race-standings"></ol>
+            <div class="race-actions">
+              <button id="race-ready" class="button primary">I’m ready</button
+              ><button id="race-host-start" class="button primary" hidden>
+                Start race</button
+              ><button id="race-focus" class="button primary" hidden>
+                Pause focus</button
+              ><span id="race-hint"></span>
+            </div>
+          </section>
+        </div>
+        <p class="quiet-note">
+          Manual focus tracking · Invite friends using the same shared server.
+        </p>
       </section>
       <footer>
-        <span><i></i> Your progress stays on this device.</span
+        <span><i></i> Personal progress stays on this device.</span
         ><span>Camera AI &amp; hardware not connected</span>
       </footer>
     </main>

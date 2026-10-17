@@ -1,4 +1,4 @@
-﻿import {
+import {
   FocusSession,
   MISSIONS,
   UNLOCKS,
@@ -6,6 +6,7 @@
   dayKey,
   streakFor,
 } from "./focus.js";
+import { initFriends } from "./friends.js";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -18,6 +19,7 @@ let missionMinutes = 5;
 let celebrated = false;
 let storageWarning = false;
 let renderedDay = dayKey(new Date());
+let raceActive = false;
 
 function notify(message) {
   $("#announcement").textContent = message;
@@ -126,8 +128,7 @@ function renderProgress() {
   const list = $("#session-list");
   list.replaceChildren();
   if (!sessions.length)
-    list.innerHTML =
-      '<div class="empty">Your first little win goes here.</div>';
+    list.innerHTML = '<div class="empty">No sessions yet.</div>';
   sessions
     .slice(-3)
     .reverse()
@@ -188,6 +189,8 @@ const timeText = (seconds) =>
   `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 function renderTimer() {
   const active = session.active;
+  $("#start").disabled = raceActive && !active;
+  $("#quest-start").disabled = raceActive && !active;
   const remaining = active
     ? Math.ceil(active.duration - session.elapsed())
     : focusMinutes * 60;
@@ -196,18 +199,24 @@ function renderTimer() {
     ? "Ⅱ Pause"
     : active
       ? "▶ Resume"
-      : "▶ Start focusing";
+      : raceActive
+        ? "Race in progress"
+        : "▶ Start focusing";
   $("#finish").disabled = !active;
   $("#focus-state").textContent = active
     ? active.mode === "quest"
       ? "Focus Quest"
       : "Focus session"
-    : "Ready when you are";
+    : raceActive
+      ? "Friends race"
+      : "Ready";
   $("#timer-subtitle").textContent = session.running
-    ? "One thing at a time."
+    ? "Focusing"
     : active
-      ? "Paused. Take your time."
-      : "A fresh start.";
+      ? "Paused"
+      : raceActive
+        ? "Continue on Friends"
+        : "Ready";
   $("#task").disabled = !!active;
   $("#quest-task").disabled = !!active;
   if (active) {
@@ -245,22 +254,28 @@ function renderTimer() {
     ? session.running
       ? "Ⅱ Pause session"
       : "▶ Resume session"
-    : "Start mission →";
+    : raceActive
+      ? "Race in progress"
+      : "Start mission →";
   $("#quest-finish").hidden = !active;
   $("#mission-note").textContent =
     active?.mode === "focus"
       ? "Finish this session before starting a mission."
-      : "Finish the full timer to earn your bonus.";
+      : raceActive
+        ? "Your race is on the Friends page."
+        : "Finish the full timer to earn your bonus.";
   setPose(session.running ? "study" : celebrated ? "celebrate" : "hello");
   $("#buddy-title").innerHTML = session.running
-    ? "A little less scrolling.<br>A little more doing."
+    ? "Focusing"
     : active
-      ? "A breather is good.<br>I’ll be right here."
+      ? "On a break"
       : celebrated
-        ? "Look at you go.<br>That’s a little win."
-        : "You bring the ideas.<br>I’ll bring the company.";
+        ? "Session complete"
+        : "Ready to study";
 }
 function toggleTimer(mode) {
+  if (raceActive && !session.active)
+    return notify("Finish your friend race first.");
   if (session.running) session.pause();
   else if (session.active) session.resume();
   else {
@@ -269,7 +284,12 @@ function toggleTimer(mode) {
     const task =
       $(mode === "quest" ? "#quest-task" : "#task").value.trim() ||
       (mode === "quest" ? MISSIONS[minutes].title : "Focused work");
-    session.start({ id: crypto.randomUUID(), task, minutes, mode });
+    const id =
+      crypto.randomUUID?.() ||
+      [...crypto.getRandomValues(new Uint8Array(16))]
+        .map((n) => n.toString(16).padStart(2, "0"))
+        .join("");
+    session.start({ id, task, minutes, mode });
   }
   persist();
   renderTimer();
@@ -316,20 +336,11 @@ $$("[data-mission]").forEach((b) =>
     }
   }),
 );
-$$("[data-direction]").forEach((b) =>
-  b.addEventListener("click", () => {
-    $("#pose-robot").dataset.direction = b.dataset.direction;
-    $("#pose-robot").alt = `Robot tilted ${b.dataset.direction}`;
-    $$("[data-direction]").forEach((button) =>
-      button.setAttribute("aria-pressed", String(button === b)),
-    );
-  }),
-);
 function renderPage(scroll = true) {
-  const page = ["dashboard", "quest", "stickers"].includes(
-    location.hash.slice(1),
+  const page = ["dashboard", "quest", "friends", "stickers"].includes(
+    location.hash.slice(1).split("?")[0],
   )
-    ? location.hash.slice(1)
+    ? location.hash.slice(1).split("?")[0]
     : "dashboard";
   $$(".page").forEach((el) => (el.hidden = el.id !== `page-${page}`));
   $$("[data-page]").forEach((link) => {
@@ -367,3 +378,20 @@ renderTimer();
 renderPage(false);
 if (restored)
   notify("Your session was restored paused. Resume whenever you’re ready.");
+
+initFriends({
+  isBusy: () => !!session.active,
+  onActive: (active) => {
+    raceActive = active;
+    renderTimer();
+  },
+  onAward: (result) => {
+    if (sessions.some((s) => s.id === result.id)) return;
+    sessions = normalizeSessions([...sessions, result]);
+    persist();
+    renderProgress();
+    celebrated = true;
+    renderTimer();
+  },
+  notify,
+});
