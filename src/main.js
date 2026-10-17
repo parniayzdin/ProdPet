@@ -162,13 +162,13 @@ function renderProgress() {
   $("#level-badge").textContent =
     `Level ${unlocked.length + 1} · ${unlocked.length ? "Making it yours" : "New beginnings"}`;
   $("#room-count").textContent =
-    `${unlocked.length} / ${UNLOCKS.length} discoveries`;
+    `${unlocked.length} / ${UNLOCKS.length} unlocked`;
   $("#room-next").textContent = next
-    ? `Next up: ${next.title.toLowerCase()}.`
-    : "Your little study is complete.";
+    ? `Next: ${next.title.toLowerCase()}`
+    : "All decorations unlocked";
   $("#room-progress-text").textContent = next
-    ? `${next.points - points} points to your next discovery.`
-    : "Keep studying. Every session still earns points.";
+    ? `${next.points - points} more points to unlock.`
+    : "Your room is complete.";
   $("#room-progress-fill").style.width = `${percentage}%`;
   $(".room-progress").setAttribute(
     "aria-valuenow",

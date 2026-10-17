@@ -738,6 +738,8 @@ footer {
   left: 19%;
   height: 76%;
   width: 44%;
+  /* Anchor the artwork to the floor, even when its image box is taller. */
+  object-position: center bottom;
   z-index: 3;
   filter: drop-shadow(0 8px 5px #55624318);
   transition: transform 0.4s;
