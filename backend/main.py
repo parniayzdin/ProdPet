@@ -2,6 +2,7 @@
 # frontend runs the timer so we just save finished sessions, give back stats,
 # take presence ticks, and apply habit penalties from the desk robot.
 
+import os
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
@@ -33,12 +34,20 @@ from models import (
 
 app = FastAPI(title="ProdPet API", version="0.1.0")
 
+# Local Vite + optional FRONTEND_ORIGIN (comma-separated) for Vultr / production.
+_cors_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+_cors_origins.extend(
+    o.strip()
+    for o in (os.getenv("FRONTEND_ORIGIN") or "").split(",")
+    if o.strip()
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
