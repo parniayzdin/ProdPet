@@ -1,21 +1,9 @@
 const $ = (selector) => document.querySelector(selector);
+const SESSION_KEY = "productivity.race.v1";
 const clockText = (seconds) =>
   `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
-export function initFriends({
-  account,
-  api,
-  isBusy,
-  onActive,
-  onAward,
-  notify,
-}) {
-  const SESSION_KEY = `productivity.race.account.${account.id}`;
-  let stopped = false;
-  for (const id of ["#race-name", "#join-name"]) {
-    $(id).value = account.username;
-    $(id).readOnly = true;
-  }
+export function initFriends({ isBusy, onActive, onAward, notify }) {
   let credentials = null;
   let room = null;
   let focused = false;
@@ -46,12 +34,36 @@ export function initFriends({
     }
   }
   async function request(path, data, auth = credentials) {
-    return api(`/api/rooms${path}`, data, {
-      headers: auth?.token ? { Authorization: `Bearer ${auth.token}` } : {},
-    });
+    let response;
+    try {
+      response = await fetch(`/api/rooms${path}`, {
+        method: data === undefined ? "GET" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+        },
+        body: data === undefined ? undefined : JSON.stringify(data),
+        signal: AbortSignal.timeout(7000),
+      });
+    } catch {
+      throw new Error(
+        "Race server unavailable. Check your connection; focus tracking is paused.",
+      );
+    }
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error("Start the race server with npm start, then try again.");
+    }
+    if (!response.ok) {
+      const e = new Error(result.error || "Could not update the room.");
+      e.status = response.status;
+      throw e;
+    }
+    return result;
   }
   function apply(next) {
-    if (stopped) return;
     if (next.serverNow < lastSnapshot) return;
     if (room?.status === "lobby" && next.status === "running")
       focused = !isBusy();
@@ -87,7 +99,6 @@ export function initFriends({
             : clockText(Math.max(0, Math.ceil((room.endsAt - now) / 1000)));
   }
   function render() {
-    if (stopped) return;
     onActive(room?.status === "running", focused && connected);
     $("#race-setup").hidden = !!credentials;
     $("#race-room").hidden = !room;
@@ -190,7 +201,7 @@ export function initFriends({
     renderClock();
   }
   async function enter(path, data) {
-    if (busy || stopped) return;
+    if (busy) return;
     busy = true;
     error();
     $("#race-setup")
@@ -216,7 +227,7 @@ export function initFriends({
     }
   }
   async function action(name, data) {
-    if (busy || !credentials || stopped) return;
+    if (busy || !credentials) return;
     busy = true;
     render();
     error();
@@ -247,7 +258,7 @@ export function initFriends({
     }
   }
   async function poll() {
-    if (!credentials || polling || busy || stopped) return;
+    if (!credentials || polling || busy) return;
     polling = true;
     const requestGeneration = generation;
     const sentFocus = focused;
@@ -333,34 +344,21 @@ export function initFriends({
       $("#race-code").value = code.toUpperCase();
   }
   window.addEventListener("hashchange", fillInvite);
-  function pauseOnExit() {
+  window.addEventListener("pagehide", () => {
     if (credentials)
       fetch(`/api/rooms/${credentials.code}/heartbeat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Requested-With": "Productivity",
-          "X-Account-ID": account.id,
           Authorization: `Bearer ${credentials.token}`,
         },
         body: JSON.stringify({ focused: false }),
         keepalive: true,
       }).catch(() => {});
-  }
-  window.addEventListener("pagehide", pauseOnExit);
+  });
   fillInvite();
   render();
   poll();
-  const pollTimer = setInterval(poll, 2000);
-  const clockTimer = setInterval(renderClock, 250);
-  return {
-    stop() {
-      stopped = true;
-      generation++;
-      focused = false;
-      clearInterval(pollTimer);
-      clearInterval(clockTimer);
-      pauseOnExit();
-    },
-  };
+  setInterval(poll, 2000);
+  setInterval(renderClock, 250);
 }

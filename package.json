@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node --test src/focus.test.js src/robot.test.js server/races.test.js server/accounts.test.js",
+    "test": "node --test src/focus.test.js src/robot.test.js server/races.test.js",
     "start": "node server/index.js",
     "share": "node server/index.js --share"
   },

@@ -31,12 +31,11 @@ export class RaceStore {
       fail("Enter a name between 1 and 24 characters.");
     return name;
   }
-  player(name, accountId = null) {
+  player(name) {
     return {
       id: randomUUID(),
       token: randomBytes(24).toString("hex"),
       name: this.name(name),
-      accountId,
       ready: false,
       focused: false,
       focusMs: 0,
@@ -51,13 +50,8 @@ export class RaceStore {
     this.finalize(room);
     return room;
   }
-  authenticate(room, token, accountId) {
-    const player = room.players.find(
-      (p) =>
-        p.token === token &&
-        !p.left &&
-        (accountId === undefined || p.accountId === accountId),
-    );
+  authenticate(room, token) {
+    const player = room.players.find((p) => p.token === token && !p.left);
     if (!player) fail("This room session is no longer valid. Join again.", 401);
     return player;
   }
@@ -121,13 +115,13 @@ export class RaceStore {
         .sort((a, b) => b.seconds - a.seconds || a.name.localeCompare(b.name)),
     };
   }
-  create({ name, minutes, accountId }) {
+  create({ name, minutes }) {
     this.clean();
     if (![5, 15, 25].includes(minutes))
       fail("Choose a 5, 15, or 25 minute race.");
     if (this.rooms.size >= 500)
       fail("The server is full. Try again later.", 503);
-    const host = this.player(name, accountId);
+    const host = this.player(name);
     let code;
     do {
       code = randomBytes(4).toString("hex").slice(0, 6).toUpperCase();
@@ -146,12 +140,12 @@ export class RaceStore {
     this.flush();
     return { room: this.snapshot(room, host), token: host.token };
   }
-  join(code, { name, accountId }) {
+  join(code, { name }) {
     const room = this.get(code);
     if (room.status !== "lobby")
       fail("This race has already started. Join the next race.", 409);
     if (room.players.length >= 8) fail("This room is full (8 players).", 409);
-    const player = this.player(name, accountId);
+    const player = this.player(name);
     if (
       room.players.some(
         (p) => p.name.toLowerCase() === player.name.toLowerCase(),
@@ -162,15 +156,13 @@ export class RaceStore {
     this.flush();
     return { room: this.snapshot(room, player), token: player.token };
   }
-  read(code, token, accountId) {
+  read(code, token) {
     const room = this.get(code);
-    return {
-      room: this.snapshot(room, this.authenticate(room, token, accountId)),
-    };
+    return { room: this.snapshot(room, this.authenticate(room, token)) };
   }
-  action(code, token, action, data = {}, accountId) {
+  action(code, token, action, data = {}) {
     const room = this.get(code);
-    const player = this.authenticate(room, token, accountId);
+    const player = this.authenticate(room, token);
     const now = this.clock();
     if (action === "heartbeat") {
       this.settle(room, player, now);
