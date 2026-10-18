@@ -27,6 +27,10 @@ The server stores salted scrypt password hashes, never plaintext passwords. Sess
 
 Hash settings follow the [OWASP scrypt guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt).
 
+### Host on Vultr
+
+See [the Vultr deployment guide](deploy/vultr/README.md) for the Docker setup that runs the app and login API behind HTTPS, with persistent account data and shared friend races. Deployment files are included; a Vultr account, server, and domain still need to be configured. The team's unpushed Tiger integration is not connected in this branch yet.
+
 ### Friends on separate laptops
 
 Run `npm run build`, then `npm run share` on one computer. Everyone, including the host, opens `http://<host-computer-LAN-IP>:4173` on the same reachable network and creates their own account. Create a room and share its six-character code or use **Copy invite**. A localhost invite only works on the host's computer. Network/firewall settings must allow the other devices to reach that port; this command does not change those settings. Stop any existing `npm start` server before using `npm run share`. Plain HTTP is for local demos with throwaway passwords; use HTTPS before collecting real credentials.

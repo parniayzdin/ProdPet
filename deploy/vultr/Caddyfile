@@ -1,0 +1,9 @@
+{
+    email {$ACME_EMAIL}
+}
+
+{$APP_DOMAIN} {
+    encode zstd gzip
+    # Caddy preserves the public Host header for the app's Origin checks.
+    reverse_proxy app:4173
+}
