@@ -1,3 +1,12 @@
+import {
+  getSession,
+  signIn,
+  signOut,
+  signUp,
+  toAccount,
+} from "./supabase.js";
+import { fetchUserSessions } from "./api.js";
+
 const $ = (selector) => document.querySelector(selector);
 let account = null;
 let dashboard = null;
@@ -22,7 +31,7 @@ export async function api(path, data, options = {}) {
     });
   } catch {
     throw new Error(
-      "Cannot reach the server. Check your connection and try again.",
+      "Cannot reach the friends server. Run npm start if you need races.",
     );
   }
   let result;
@@ -30,7 +39,7 @@ export async function api(path, data, options = {}) {
     result = await response.json();
   } catch {
     throw new Error(
-      "The account server is unavailable. Start it with npm start, then retry.",
+      "The friends server is unavailable. Start it with npm start, then retry.",
     );
   }
   if (!response.ok) {
@@ -72,24 +81,32 @@ function announceAccountChange() {
   try {
     localStorage.setItem("productivity.auth.changed", String(Date.now()));
   } catch {
-    /* Cookie still controls access. */
+    /* Supabase session still controls access. */
   }
 }
+
 async function launch(user) {
   if (dashboard) {
     location.reload();
     return;
   }
   account = user;
-  const progress = await api("/api/progress");
+  let sessions = [];
+  try {
+    sessions = await fetchUserSessions();
+  } catch (error) {
+    if (error.status === 401) throw error;
+    console.warn("Could not load server sessions", error);
+  }
   const { startDashboard } = await import("./main.js");
-  dashboard = startDashboard(user, progress.sessions, api);
+  dashboard = startDashboard(user, sessions, api);
   $("#account-name").textContent = `@${user.username}`;
   $("#auth-form").reset();
   $("#auth-screen").hidden = true;
   $("#app-shell").hidden = false;
   expired = false;
 }
+
 $("#auth-switch").addEventListener("click", () => {
   signup = !signup;
   $("#auth-title").textContent = signup
@@ -104,7 +121,7 @@ $("#auth-switch").addEventListener("click", () => {
     : "New here? Sign up";
   $("#auth-confirm-wrap").hidden = !signup;
   $("#auth-confirm").required = signup;
-  $("#auth-password").minLength = signup ? 15 : 1;
+  $("#auth-password").minLength = signup ? 6 : 1;
   $("#auth-password").autocomplete = signup
     ? "new-password"
     : "current-password";
@@ -113,6 +130,7 @@ $("#auth-switch").addEventListener("click", () => {
   $("#auth-confirm").value = "";
   message();
 });
+
 $("#auth-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (busy) return;
@@ -122,23 +140,32 @@ $("#auth-form").addEventListener("submit", async (event) => {
   setBusy(true);
   message();
   try {
-    const { user } = await api(`/api/auth/${signup ? "signup" : "login"}`, {
-      username: $("#auth-username").value,
-      password,
-    });
+    const email = $("#auth-email").value.trim();
+    const data = signup
+      ? await signUp(email, password)
+      : await signIn(email, password);
+    if (!data.session?.user) {
+      message(
+        signup
+          ? "Account created. If email confirmation is on, check your inbox, then log in."
+          : "Could not start a session. Try logging in again.",
+      );
+      return;
+    }
     announceAccountChange();
-    await launch(user);
+    await launch(toAccount(data.session.user));
   } catch (error) {
     message(error.message, !error.status || error.status >= 500);
   } finally {
     setBusy(false);
   }
 });
+
 $("#account-logout").addEventListener("click", async () => {
   $("#account-logout").disabled = true;
   try {
     await dashboard?.flush();
-    await api("/api/auth/logout", {});
+    await signOut();
     dashboard?.suspend();
     announceAccountChange();
     $("#app-shell").hidden = true;
@@ -150,37 +177,44 @@ $("#account-logout").addEventListener("click", async () => {
     $("#account-logout").disabled = false;
   }
 });
+
 window.addEventListener("storage", (event) => {
   if (event.key === "productivity.auth.changed") {
     expire();
     location.reload();
   }
 });
-// Recheck both active tabs and tabs returning from the background.
+
 async function checkSession() {
   if (document.hidden || !dashboard || expired) return;
   try {
-    const result = await api("/api/auth/session");
-    if (result.user.id !== account.id) expire();
-  } catch (error) {
-    if (error.status === 401) expire();
+    const session = await getSession();
+    if (!session?.user || session.user.id !== account.id) expire();
+  } catch {
+    expire();
   }
 }
 document.addEventListener("visibilitychange", checkSession);
 setInterval(checkSession, 60000);
+
 async function restore() {
   if (busy) return;
   setBusy(true);
   message("Checking your session…");
   try {
-    const result = await api("/api/auth/session");
-    await launch(result.user);
+    const session = await getSession();
+    if (!session?.user) {
+      account = null;
+      message();
+      return;
+    }
+    await launch(toAccount(session.user));
     message();
   } catch (error) {
     if (error.status === 401) {
       account = null;
       message();
-    } else message(error.message, !error.status || error.status >= 500);
+    } else message(error.message, true);
   } finally {
     setBusy(false);
   }

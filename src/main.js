@@ -8,6 +8,12 @@ import {
 } from "./focus.js";
 import { initFriends } from "./friends.js";
 import { initRobot, studyEmotion } from "./robot.js";
+import {
+  fetchFocusQuality,
+  fetchUserStats,
+  postCompletedSession,
+  postPresence,
+} from "./api.js";
 
 export function startDashboard(account, serverSessions, api) {
   const $ = (selector) => document.querySelector(selector);
@@ -26,6 +32,9 @@ export function startDashboard(account, serverSessions, api) {
   let suspended = false;
   let syncing = null;
   let syncWarning = false;
+  let serverStats = null;
+  let lastPresenceSent = 0;
+  let lastPresenceRunning = false;
   const synced = new Set(normalizeSessions(serverSessions).map((s) => s.id));
 
   function notify(message) {
@@ -71,25 +80,53 @@ export function startDashboard(account, serverSessions, api) {
     }
     if (sync && !suspended) void syncProgress();
   }
+  async function refreshStats() {
+    try {
+      serverStats = await fetchUserStats();
+      renderProgress();
+    } catch (error) {
+      console.warn("Could not load account stats", error);
+    }
+  }
+  async function refreshDeskQuality() {
+    const el = $("#desk-quality");
+    if (!el) return;
+    try {
+      const sid = session.active?.id;
+      const quality = await fetchFocusQuality(sid);
+      el.innerHTML = `${quality.at_desk_percent} <small>%</small>`;
+    } catch {
+      /* Keep previous value if API is unavailable. */
+    }
+  }
+  async function sendPresenceTick(present) {
+    if (!session.active?.id) return;
+    try {
+      await postPresence({
+        sessionId: session.active.id,
+        present,
+        source: "timer",
+      });
+      lastPresenceSent = Date.now();
+      void refreshDeskQuality();
+    } catch (error) {
+      console.warn("presence tick failed", error);
+    }
+  }
   async function syncProgress() {
     if (syncing) return syncing;
     if (suspended) return;
     syncing = (async () => {
       try {
-        let pending = sessions.filter((s) => !synced.has(s.id));
-        while (pending.length && !suspended) {
-          const result = await api("/api/progress", {
-            sessions: pending.slice(0, 100),
-          });
-          const remote = normalizeSessions(result.sessions);
-          remote.forEach((s) => synced.add(s.id));
-          sessions = normalizeSessions([...sessions, ...remote]);
-          persist(false);
-          renderProgress();
-          pending = sessions.filter((s) => !synced.has(s.id));
+        const pending = sessions.filter((s) => !synced.has(s.id));
+        for (const s of pending) {
+          if (suspended) break;
+          await postCompletedSession(s);
+          synced.add(s.id);
         }
         $("#save-status").textContent = "Progress saved to your account";
         syncWarning = false;
+        await refreshStats();
       } catch (error) {
         $("#save-status").textContent =
           "Saved on this device · waiting to sync";
@@ -127,26 +164,44 @@ export function startDashboard(account, serverSessions, api) {
         day: "numeric",
       })
       .toUpperCase();
-    const todaySeconds = sessions
+    const localTodaySeconds = sessions
       .filter((s) => dayKey(new Date(s.date)) === renderedDay)
       .reduce((sum, s) => sum + s.seconds, 0);
-    const points = sessions.reduce((sum, s) => sum + s.total, 0);
+    const localPoints = sessions.reduce((sum, s) => sum + s.total, 0);
+    // Stats daily buckets are UTC (Tiger time_bucket).
+    const todayKey = now.toISOString().slice(0, 10);
+    const todayStat = serverStats?.daily?.find((d) => d.date === todayKey);
+    const todayMinutes =
+      todayStat != null
+        ? todayStat.focus_minutes
+        : Math.floor(localTodaySeconds / 60);
+    const points =
+      serverStats != null ? serverStats.total_points : localPoints;
     $("#header-points").textContent = points.toLocaleString();
-    $("#focus-total").innerHTML =
-      `${Math.floor(todaySeconds / 60)} <small>min</small>`;
+    $("#focus-total").innerHTML = `${todayMinutes} <small>min</small>`;
     $("#points-total").innerHTML =
       `${points.toLocaleString()} <small>pts</small>`;
     const streak = streakFor(sessions, now);
     $("#streak-total").innerHTML =
       `${streak} <small>${streak === 1 ? "day" : "days"}</small>`;
     const days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(now);
-      date.setDate(date.getDate() - 6 + i);
-      const minutes = Math.floor(
-        sessions
-          .filter((s) => dayKey(new Date(s.date)) === dayKey(date))
-          .reduce((sum, s) => sum + s.seconds, 0) / 60,
+      const date = new Date(
+        Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth(),
+          now.getUTCDate() - 6 + i,
+        ),
       );
+      const iso = date.toISOString().slice(0, 10);
+      const fromServer = serverStats?.daily?.find((d) => d.date === iso);
+      const minutes =
+        fromServer != null
+          ? fromServer.focus_minutes
+          : Math.floor(
+              sessions
+                .filter((s) => s.date.slice(0, 10) === iso)
+                .reduce((sum, s) => sum + s.seconds, 0) / 60,
+            );
       return { date, minutes };
     });
     const max = Math.max(30, ...days.map((d) => d.minutes));
@@ -163,7 +218,9 @@ export function startDashboard(account, serverSessions, api) {
         return col;
       }),
     );
-    $("#session-count").textContent = `${sessions.length} completed`;
+    const sessionCount =
+      serverStats != null ? serverStats.completed_sessions : sessions.length;
+    $("#session-count").textContent = `${sessionCount} completed`;
     const list = $("#session-list");
     list.replaceChildren();
     if (!sessions.length)
@@ -189,11 +246,16 @@ export function startDashboard(account, serverSessions, api) {
         row.append(icon, info, reward);
         list.append(row);
       });
-    const unlocked = UNLOCKS.filter((item) => points >= item.points);
-    const next = UNLOCKS.find((item) => points < item.points);
+    // Quest unlocks still use the richer local session total when present.
+    const unlockPoints = Math.max(points, localPoints);
+    const unlocked = UNLOCKS.filter((item) => unlockPoints >= item.points);
+    const next = UNLOCKS.find((item) => item.points > unlockPoints);
     const previous = unlocked.at(-1)?.points || 0;
     const percentage = next
-      ? Math.min(100, ((points - previous) / (next.points - previous)) * 100)
+      ? Math.min(
+          100,
+          ((unlockPoints - previous) / (next.points - previous)) * 100,
+        )
       : 100;
     $("#level-badge").textContent =
       `Level ${unlocked.length + 1} · ${unlocked.length ? "Making it yours" : "New beginnings"}`;
@@ -203,7 +265,7 @@ export function startDashboard(account, serverSessions, api) {
       ? `Next: ${next.title.toLowerCase()}`
       : "All decorations unlocked";
     $("#room-progress-text").textContent = next
-      ? `${next.points - points} more points to unlock.`
+      ? `${next.points - unlockPoints} more points to unlock.`
       : "Your room is complete.";
     $("#room-progress-fill").style.width = `${percentage}%`;
     $(".room-progress").setAttribute(
@@ -216,7 +278,7 @@ export function startDashboard(account, serverSessions, api) {
     );
     $("#unlock-grid").replaceChildren(
       ...UNLOCKS.map((item) => {
-        const isUnlocked = points >= item.points;
+        const isUnlocked = unlockPoints >= item.points;
         const card = document.createElement("article");
         card.className = `unlock-card${isUnlocked ? " unlocked" : ""}`;
         card.innerHTML = `<span class="lock-indicator">${isUnlocked ? "✓ Yours" : "Locked"}</span><span class="unlock-symbol" aria-hidden="true">${item.symbol}</span><h3>${item.title}</h3><p>${isUnlocked ? "In your room" : `${item.points} points`}</p>`;
@@ -422,6 +484,15 @@ export function startDashboard(account, serverSessions, api) {
       finishSession();
     else renderTimer();
     if (renderedDay !== dayKey(new Date())) renderProgress();
+
+    // Tiger presence stream: tick while running; one "away" tick on pause.
+    if (session.running && session.active) {
+      lastPresenceRunning = true;
+      if (Date.now() - lastPresenceSent >= 10000) void sendPresenceTick(true);
+    } else if (lastPresenceRunning && session.active) {
+      lastPresenceRunning = false;
+      void sendPresenceTick(false);
+    }
   }, 250);
   setInterval(() => {
     if (session.active && !suspended) persist();
@@ -432,6 +503,7 @@ export function startDashboard(account, serverSessions, api) {
   renderProgress();
   renderTimer();
   renderPage(false);
+  void refreshStats();
   if (restored)
     notify("Your session was restored paused. Resume whenever you’re ready.");
 

@@ -4,3 +4,10 @@ dist/
 .env.*
 !.env.example
 .data/
+vision/.venv/
+backend/.venv/
+*.db
+__pycache__/
+*.pyc
+tiger-cloud*.env
+
