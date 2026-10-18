@@ -1,6 +1,6 @@
 ﻿# Productivity
 
-A study dashboard with robot room rewards and shared focus races.
+A study dashboard with personal accounts, robot room rewards, and shared focus races.
 
 ## Run
 
@@ -15,15 +15,23 @@ In a second terminal:
 npm run dev
 ```
 
-Vite proxies `/api` to the race server on port 4173. Personal timers still work without the server; friend races require it. Use Node 22 or newer.
+Vite proxies `/api` to the account and race server on port 4173. Both processes must run: signing in and loading the dashboard require the server. Use Node 22 or newer.
 
-For a production build, run `npm run build`, then `npm start` and open `http://127.0.0.1:4173`. `npm run preview` serves only the frontend, without friend races. `npm test` checks personal timers, rewards, race scoring, permissions, reconnects, persistence, and the HTTP API.
+For a built local app, run `npm run build`, then `npm start` and open `http://127.0.0.1:4173`. Use this instead of `npm run preview`, which has no account server. `npm test` checks accounts, access control, progress isolation, personal timers, rewards, race scoring, reconnects, persistence, and the HTTP API.
+
+## Accounts
+
+Create a username and password on the first screen, then log in to use any page. Usernames use 3–24 letters, numbers, or underscores; passwords use 15–128 characters. Each account has separate saved sessions, points, room rewards, and race membership. Open the username menu to log out. Logging out pauses the local timer and disconnects the robot.
+
+The server stores salted scrypt password hashes, never plaintext passwords. Sessions use an HttpOnly, SameSite=Strict cookie, expire after seven days, and are revoked on logout. Restarting the server requires signing in again; accounts and saved progress remain. Login attempts are rate limited. Google sign-in, email verification, and password recovery are not included.
+
+Hash settings follow the [OWASP scrypt guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt).
 
 ### Friends on separate laptops
 
-Run `npm run build`, then `npm run share` on one computer. Everyone, including the host, opens `http://<host-computer-LAN-IP>:4173` on the same reachable network. Create a room and share its six-character code or use **Copy invite**. A localhost invite only works on the host's computer. Network/firewall settings must allow the other devices to reach that port; this command does not change those settings. Stop any existing `npm start` server before using `npm run share`.
+Run `npm run build`, then `npm run share` on one computer. Everyone, including the host, opens `http://<host-computer-LAN-IP>:4173` on the same reachable network and creates their own account. Create a room and share its six-character code or use **Copy invite**. A localhost invite only works on the host's computer. Network/firewall settings must allow the other devices to reach that port; this command does not change those settings. Stop any existing `npm start` server before using `npm run share`. Plain HTTP is for local demos with throwaway passwords; use HTTPS before collecting real credentials.
 
-For remote friends, deploy this Node server and its `dist` folder together to one shared host with HTTPS and persistent storage for `.data`. This branch does not include an online deployment. `PORT` can override the default port.
+For remote friends, deploy this Node server and its `dist` folder together to one shared host with HTTPS and persistent storage for `.data`. Set `NODE_ENV=production` to require Secure cookies, and use `npm run share` behind the HTTPS reverse proxy. Keep the proxy Host header unchanged. This branch does not include an online deployment. `PORT` can override the default port.
 
 ## Pages
 
@@ -50,9 +58,11 @@ Finishing a race adds 10 personal points per whole focused minute, once per part
 
 ## Storage
 
-Personal progress is stored in `productivity.workspace.v2` in browser local storage. Existing `productivity.sessions.v1` history is migrated without removing the original data. Active sessions checkpoint every five seconds and on page exit; after reload they restore paused, with no offline time awarded. Abrupt browser termination can lose the last checkpoint interval. Use one active study tab at a time. Personal progress does not sync to an account or another device.
+Accounts and completed study sessions are stored in `.data/accounts.json` (ignored by Git). Keep this directory private and back it up on the host. Completed progress syncs to the server and loads when that account signs in on another device. The browser keeps an account-specific cache in `productivity.workspace.account.<account-id>` and retries unsaved sessions if the connection drops. Passwords and session tokens are not stored in local storage.
 
-Race names, readiness, and focus times are shared with the room. Room membership is stored in per-tab session storage, so reloads work but closing the tab can lose access. Keep the tab open through the result to save personal points. The server persists rooms in `.data/races.json` (ignored by Git); rooms expire after 24 hours. Membership tokens are never included in shared room snapshots. This is a small, single-server hackathon service, without accounts or a global leaderboard.
+Active timers checkpoint locally every five seconds and on page exit; after reload they restore paused, with no offline time awarded. Active timers do not move between devices. Abrupt browser termination can lose the last checkpoint interval. Use one active study tab at a time. Old anonymous history in `productivity.workspace.v2` or `productivity.sessions.v1` is preserved but is not automatically assigned to a new account.
+
+Race usernames, readiness, and focus times are shared with the room. Your account username is your race name. Room membership is tied to the account and stored in per-tab session storage, so reloads work but closing the tab can lose access. Keep the tab open through the result to save personal points. The server persists rooms in `.data/races.json` (ignored by Git); rooms expire after 24 hours. Membership tokens and account IDs are never included in shared room snapshots. Existing anonymous rooms must be recreated after this update. This is a small, single-server hackathon service without a global leaderboard.
 
 ## Hardware and camera
 
