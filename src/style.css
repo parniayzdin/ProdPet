@@ -10,6 +10,158 @@
   --mint: #e6eddd;
   --cream: #fcfcf7;
 }
+.auth-screen {
+  min-height: 100svh;
+  width: min(960px, 100%);
+  margin: auto;
+  padding: 48px 32px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+.auth-illustration {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+}
+.auth-illustration .brand {
+  font-size: 32px;
+}
+.auth-illustration img {
+  width: 320px;
+  height: 320px;
+}
+.auth-illustration p {
+  color: var(--muted);
+  font-size: 17px;
+}
+.auth-card {
+  width: 100%;
+  padding: 36px;
+}
+.auth-card h1 {
+  font-size: 30px;
+  letter-spacing: -1px;
+}
+.auth-intro {
+  color: var(--muted);
+  margin: 10px 0 24px;
+}
+.auth-card label {
+  display: block;
+  margin: 18px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.auth-card input {
+  width: 100%;
+  background: #f5f6ef;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 13px 14px;
+  color: inherit;
+}
+.auth-card .quiet-note {
+  text-align: left;
+  margin: 8px 0 0;
+}
+.auth-message {
+  color: #98502e;
+  font-size: 14px;
+  margin-top: 16px;
+}
+.auth-message:empty {
+  display: none;
+}
+.auth-card .primary {
+  width: 100%;
+  margin-top: 24px;
+}
+.auth-switch,
+.auth-retry {
+  display: block;
+  background: none;
+  border: 0;
+  margin: 20px auto 0;
+  padding: 4px;
+  color: var(--green);
+  font-size: 14px;
+}
+.auth-retry {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 10px;
+}
+.account-menu {
+  position: relative;
+  font-size: 13px;
+  max-width: 160px;
+}
+.account-menu summary {
+  cursor: pointer;
+  padding: 10px;
+  overflow-wrap: anywhere;
+}
+.account-menu button {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  right: 0;
+  padding: 14px 24px;
+  white-space: nowrap;
+  color: var(--green);
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px #293c3315;
+}
+@media (max-width: 1050px) {
+  .site-header {
+    flex-wrap: wrap;
+    height: auto !important;
+    gap: 12px;
+    padding-block: 16px !important;
+  }
+  .site-header nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+  .account-menu {
+    order: 2;
+  }
+  .points-badge {
+    margin-left: auto;
+  }
+}
+@media (max-width: 680px) {
+  .auth-screen {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding: 28px 20px;
+    max-width: 440px;
+  }
+  .auth-illustration img {
+    width: 116px;
+    height: 116px;
+  }
+  .auth-illustration p {
+    display: none;
+  }
+  .auth-illustration {
+    gap: 4px;
+  }
+  .auth-illustration .brand {
+    font-size: 26px;
+  }
+  .auth-card {
+    padding: 25px;
+  }
+  .account-menu {
+    max-width: 120px;
+  }
+}
 * {
   box-sizing: border-box;
 }

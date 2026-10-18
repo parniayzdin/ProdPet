@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { RaceStore } from "./races.js";
 import { createApp } from "./index.js";
+import { AccountStore } from "./accounts.js";
 
 function fixture() {
   let now = 1000000;
@@ -144,25 +145,50 @@ test("saved room state restores membership and does not disclose tokens", () => 
 });
 
 test("HTTP API supports two clients, validates requests, and rejects wrong origins", async (t) => {
-  const server = createApp({ store: new RaceStore() });
+  const server = createApp({
+    store: new RaceStore(),
+    accounts: new AccountStore(),
+  });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}`;
-  const post = (path, data, token, origin) =>
+  let cookieA;
+  const post = (path, data, token, origin, cookie = cookieA) =>
     fetch(base + path, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-Requested-With": "Productivity",
+        ...(cookie ? { Cookie: cookie } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(origin ? { Origin: origin } : {}),
       },
       body: JSON.stringify(data),
     });
+  const signupA = await post("/api/auth/signup", {
+    username: "alex",
+    password: "test-only long passphrase",
+  });
+  cookieA = signupA.headers.get("set-cookie").split(";")[0];
+  const signupB = await post(
+    "/api/auth/signup",
+    { username: "blair", password: "test-only long passphrase" },
+    null,
+    null,
+    "",
+  );
+  const cookieB = signupB.headers.get("set-cookie").split(";")[0];
   const created = await (
     await post("/api/rooms", { name: "Alex", minutes: 5 })
   ).json();
   const joined = await (
-    await post(`/api/rooms/${created.room.code}/join`, { name: "Blair" })
+    await post(
+      `/api/rooms/${created.room.code}/join`,
+      { name: "Blair" },
+      null,
+      null,
+      cookieB,
+    )
   ).json();
   assert.equal(joined.room.players.length, 2);
   const unauthorized = await fetch(`${base}/api/rooms/${created.room.code}`);
@@ -180,7 +206,7 @@ test("HTTP API supports two clients, validates requests, and rejects wrong origi
   assert.equal(secret.status, 404);
   const room = await (
     await fetch(`${base}/api/rooms/${created.room.code}`, {
-      headers: { Authorization: `Bearer ${created.token}` },
+      headers: { Authorization: `Bearer ${created.token}`, Cookie: cookieA },
     })
   ).json();
   assert.equal(room.room.meId, created.room.meId);
