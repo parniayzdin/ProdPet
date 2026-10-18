@@ -1,5 +1,6 @@
 # main.py — the actual API
-# frontend runs the timer so we just save finished sessions, give back stats, and take presence ticks
+# frontend runs the timer so we just save finished sessions, give back stats,
+# take presence ticks, and apply habit penalties from the desk robot.
 
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
@@ -17,12 +18,15 @@ from models import (
     DailyStat,
     FocusQualityOut,
     FocusSession,
+    PenaltyCreate,
+    PenaltyOut,
     PresenceCreate,
     PresenceEvent,
     PresenceOut,
     SessionCreate,
     SessionOut,
     UserStats,
+    penalty_points_for,
     score_session,
     validate_session_durations,
 )
@@ -187,7 +191,14 @@ def user_stats(
             func.coalesce(func.sum(FocusSession.seconds), 0),
         ).where(FocusSession.user_id == uid)
     ).one()
-    total_points = int(totals[0])
+    penalty_total = db.execute(
+        select(func.coalesce(func.sum(ActivityEvent.points), 0)).where(
+            ActivityEvent.user_id == uid,
+            ActivityEvent.event_type.like("habit_penalty%"),
+        )
+    ).scalar_one()
+    # Session points + negative habit penalties; never show below zero.
+    total_points = max(0, int(totals[0]) + int(penalty_total))
     completed_sessions = int(totals[1])
     total_focused_minutes = int(totals[2]) // 60
 
@@ -210,11 +221,18 @@ def user_stats(
                 """
                 SELECT
                     time_bucket('1 day', time) AS bucket,
-                    COALESCE(SUM(focus_seconds), 0) AS focus_seconds,
+                    COALESCE(
+                        SUM(CASE WHEN event_type = 'session_completed'
+                            THEN focus_seconds ELSE 0 END),
+                        0
+                    ) AS focus_seconds,
                     COALESCE(SUM(points), 0) AS points
                 FROM activity_events
                 WHERE user_id = :user_id
-                  AND event_type = 'session_completed'
+                  AND (
+                        event_type = 'session_completed'
+                        OR event_type LIKE 'habit_penalty%'
+                      )
                   AND time >= :start
                   AND time < :end
                 GROUP BY bucket
@@ -239,11 +257,18 @@ def user_stats(
                 """
                 SELECT
                     strftime('%Y-%m-%d', time) AS day,
-                    COALESCE(SUM(focus_seconds), 0) AS focus_seconds,
+                    COALESCE(
+                        SUM(CASE WHEN event_type = 'session_completed'
+                            THEN focus_seconds ELSE 0 END),
+                        0
+                    ) AS focus_seconds,
                     COALESCE(SUM(points), 0) AS points
                 FROM activity_events
                 WHERE user_id = :user_id
-                  AND event_type = 'session_completed'
+                  AND (
+                        event_type = 'session_completed'
+                        OR event_type LIKE 'habit_penalty%'
+                      )
                   AND time >= :start
                   AND time < :end
                 GROUP BY day
@@ -266,6 +291,78 @@ def user_stats(
         completed_sessions=completed_sessions,
         total_focused_minutes=total_focused_minutes,
         daily=[daily_map[k] for k in sorted(daily_map.keys())],
+    )
+
+
+@app.post("/penalties", response_model=PenaltyOut)
+def create_penalty(
+    data: PenaltyCreate,
+    response: Response,
+    db: Session = Depends(get_db),
+    user_id: UUID = Depends(get_current_user_id),
+):
+    # Desk robot saw a bad habit (phone, posture, …) → negative points.
+    # session_id column holds the client penalty id so the same check isn't fined twice.
+    uid = str(user_id)
+    event_id = str(data.id)
+
+    def _penalty_out(row: ActivityEvent, tip: str = "") -> PenaltyOut:
+        parts = row.event_type.split(":", 1)
+        reason = parts[1] if len(parts) == 2 else data.reason
+        return PenaltyOut(
+            id=UUID(row.session_id),
+            user_id=user_id,
+            reason=reason,
+            points=row.points,
+            tip=tip,
+            time=_as_utc(row.time),
+        )
+
+    existing = db.scalars(
+        select(ActivityEvent).where(
+            ActivityEvent.session_id == event_id,
+            ActivityEvent.user_id == uid,
+            ActivityEvent.event_type.like("habit_penalty%"),
+        )
+    ).first()
+    if existing is not None:
+        response.status_code = 200
+        return _penalty_out(existing, data.tip)
+
+    now = datetime.now(timezone.utc)
+    points = penalty_points_for(data.reason)
+    event = ActivityEvent(
+        time=now,
+        session_id=event_id,
+        user_id=uid,
+        event_type=f"habit_penalty:{data.reason}",
+        focus_seconds=0,
+        points=points,
+    )
+    try:
+        db.add(event)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        existing = db.scalars(
+            select(ActivityEvent).where(
+                ActivityEvent.session_id == event_id,
+                ActivityEvent.user_id == uid,
+            )
+        ).first()
+        if existing is None:
+            raise
+        response.status_code = 200
+        return _penalty_out(existing, data.tip)
+
+    response.status_code = 201
+    return PenaltyOut(
+        id=data.id,
+        user_id=user_id,
+        reason=data.reason,
+        points=points,
+        tip=data.tip,
+        time=now,
     )
 
 

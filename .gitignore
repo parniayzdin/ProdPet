@@ -10,4 +10,5 @@ backend/.venv/
 __pycache__/
 *.pyc
 tiger-cloud*.env
+gemini_key.txt
 

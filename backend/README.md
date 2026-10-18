@@ -36,7 +36,23 @@ Protected routes require `Authorization: Bearer <supabase_access_token>`.
 | `GET` | `/health` | Health check |
 | `POST` | `/sessions` | Save a completed session |
 | `GET` | `/users/{user_id}/sessions` | List sessions |
-| `GET` | `/users/{user_id}/stats` | Totals + last 7 days |
+| `GET` | `/users/{user_id}/stats` | Totals + last 7 days (includes habit penalties) |
+| `POST` | `/penalties` | Apply a robot habit penalty (phone, posture, …) |
+
+### Habit penalties (desk robot)
+
+While `python robot.py` is running, the dashboard polls `http://127.0.0.1:8765/checks`. Bad Gemini hits during an active focus session are posted to `POST /penalties`:
+
+| reason | points |
+|--------|--------|
+| phone | -50 |
+| distracted | -40 |
+| long_session | -30 |
+| posture | -25 |
+| stressed | -20 |
+| tired | -15 |
+
+Same penalty `id` is ignored on retry (idempotent). Total points never go below 0.
 
 
 

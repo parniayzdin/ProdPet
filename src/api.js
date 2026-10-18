@@ -102,3 +102,31 @@ export async function fetchFocusQuality(sessionId) {
   }
   return res.json();
 }
+
+export async function postHabitPenalty({
+  id,
+  reason,
+  confidence = 1,
+  tip = "",
+  sessionId = null,
+}) {
+  const headers = await authHeaders();
+  const res = await fetch(`${API_URL}/penalties`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      id,
+      reason,
+      confidence,
+      tip,
+      session_id: sessionId,
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    const error = new Error(detail || `API ${res.status}`);
+    error.status = res.status;
+    throw error;
+  }
+  return res.json();
+}

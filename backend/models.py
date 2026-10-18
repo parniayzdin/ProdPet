@@ -17,6 +17,17 @@ FOCUS_DURATIONS = {900, 1500, 3000}
 QUEST_DURATIONS = {300, 900, 1500}
 QUEST_BONUSES = {300: 25, 900: 75, 1500: 150}
 
+# Robot Gemini "bad" habits → negative points (applied once per check id).
+HABIT_PENALTIES = {
+    "phone": -50,
+    "posture": -25,
+    "distracted": -40,
+    "tired": -15,
+    "stressed": -20,
+    "long_session": -30,
+}
+HABIT_REASONS = set(HABIT_PENALTIES)
+
 
 class FocusSession(Base):
     __tablename__ = "sessions"
@@ -131,6 +142,29 @@ class FocusQualityOut(BaseModel):
     present_ticks: int
     total_ticks: int
     at_desk_percent: float
+
+
+class PenaltyCreate(BaseModel):
+    id: uuid.UUID
+    reason: Literal[
+        "phone", "posture", "distracted", "tired", "stressed", "long_session"
+    ]
+    confidence: float = Field(default=1.0, ge=0, le=1)
+    tip: str = Field(default="", max_length=240)
+    session_id: uuid.UUID | None = None
+
+
+class PenaltyOut(BaseModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    reason: str
+    points: int
+    tip: str
+    time: datetime
+
+
+def penalty_points_for(reason: str) -> int:
+    return HABIT_PENALTIES.get(reason, -25)
 
 
 def score_session(seconds: int, mode: str, duration: int) -> tuple[int, int, int]:

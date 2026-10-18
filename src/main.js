@@ -12,8 +12,16 @@ import {
   fetchFocusQuality,
   fetchUserStats,
   postCompletedSession,
+  postHabitPenalty,
   postPresence,
 } from "./api.js";
+import {
+  fetchRobotChecks,
+  fetchRobotState,
+  isBadHabitCheck,
+  penaltyIdFromCheck,
+  reactRobot,
+} from "./robotLink.js";
 
 export function startDashboard(account, serverSessions, api) {
   const $ = (selector) => document.querySelector(selector);
@@ -35,6 +43,9 @@ export function startDashboard(account, serverSessions, api) {
   let serverStats = null;
   let lastPresenceSent = 0;
   let lastPresenceRunning = false;
+  let lastRobotCheckId = 0;
+  let lastRobotPhase = null; // idle | focused | paused | done
+  let lastBuddyTip = "";
   const synced = new Set(normalizeSessions(serverSessions).map((s) => s.id));
 
   function notify(message) {
@@ -111,6 +122,75 @@ export function startDashboard(account, serverSessions, api) {
       void refreshDeskQuality();
     } catch (error) {
       console.warn("presence tick failed", error);
+    }
+  }
+  function syncRobotSession() {
+    // Tell robot.py what the website timer is doing (faces / voice via /react).
+    const phase = session.running
+      ? "focused"
+      : session.active
+        ? "paused"
+        : celebrated
+          ? "done"
+          : "idle";
+    if (phase === lastRobotPhase) return;
+    const prev = lastRobotPhase;
+    lastRobotPhase = phase;
+    const task = session.active?.task || "";
+    if (phase === "focused") {
+      void reactRobot(prev === "paused" ? "resume" : "start", {
+        face: "focused",
+        task,
+      });
+      void reactRobot("face", { face: "focused", task });
+    } else if (phase === "paused") {
+      void reactRobot("pause", { face: "sleepy", task });
+      void reactRobot("face", { face: "sleepy", task });
+    } else if (phase === "done") {
+      void reactRobot("finish", { face: "celebrating", task });
+    } else {
+      void reactRobot("face", { face: "idle", task });
+    }
+  }
+  async function pollRobotHabits() {
+    const state = await fetchRobotState();
+    const statusEl = $("#robot-status");
+    // Prefer robot.py bridge status; leave USB-connected label alone.
+    if (statusEl && statusEl.dataset.state !== "connected") {
+      if (state) {
+        statusEl.dataset.state = state.board ? "waiting" : "offline";
+        statusEl.textContent = state.board
+          ? `Robot.py online · ${state.face || "idle"}`
+          : "Robot.py online · board not connected";
+      } else {
+        statusEl.dataset.state = "offline";
+        statusEl.textContent = "Robot offline · run python robot.py";
+      }
+    }
+
+    const checks = await fetchRobotChecks(lastRobotCheckId);
+    for (const check of checks) {
+      if (check.id > lastRobotCheckId) lastRobotCheckId = check.id;
+      if (check.tip) lastBuddyTip = check.tip;
+
+      // Only fine bad habits while a focus session is actually running.
+      if (!session.running || !isBadHabitCheck(check)) continue;
+      try {
+        const penalty = await postHabitPenalty({
+          id: penaltyIdFromCheck(check.id),
+          reason: check.reason,
+          confidence: check.confidence ?? 1,
+          tip: check.tip || "",
+          sessionId: session.active?.id || null,
+        });
+        await refreshStats();
+        notify(
+          `Robot caught ${penalty.reason}: ${penalty.points} pts` +
+            (penalty.tip ? ` · ${penalty.tip}` : ""),
+        );
+      } catch (error) {
+        console.warn("habit penalty failed", error);
+      }
     }
   }
   async function syncProgress() {
@@ -375,8 +455,8 @@ export function startDashboard(account, serverSessions, api) {
           ? "Your race is on the Friends page."
           : "Finish the full timer to earn your bonus.";
     setPose(session.running ? "study" : celebrated ? "celebrate" : "hello");
-    $("#buddy-title").innerHTML = session.running
-      ? "Focusing"
+    $("#buddy-title").textContent = session.running
+      ? lastBuddyTip || "Focusing"
       : active
         ? "On a break"
         : celebrated
@@ -391,6 +471,7 @@ export function startDashboard(account, serverSessions, api) {
     else if (session.active) session.resume();
     else {
       celebrated = false;
+      lastBuddyTip = "";
       const minutes = mode === "quest" ? missionMinutes : focusMinutes;
       const task =
         $(mode === "quest" ? "#quest-task" : "#task").value.trim() ||
@@ -404,6 +485,7 @@ export function startDashboard(account, serverSessions, api) {
     }
     persist();
     renderTimer();
+    syncRobotSession();
   }
   function finishSession() {
     if (suspended) return;
@@ -415,6 +497,7 @@ export function startDashboard(account, serverSessions, api) {
       persist();
       renderProgress();
       renderTimer();
+      syncRobotSession();
       $("#result-title").textContent = result.bonus
         ? "Mission complete."
         : "You showed up.";
@@ -425,6 +508,7 @@ export function startDashboard(account, serverSessions, api) {
     } else {
       persist();
       renderTimer();
+      syncRobotSession();
       notify("Session ended. Complete one minute to earn points.");
     }
   }
@@ -500,10 +584,14 @@ export function startDashboard(account, serverSessions, api) {
   setInterval(() => {
     if (!suspended) void syncProgress();
   }, 15000);
+  setInterval(() => {
+    if (!suspended) void pollRobotHabits();
+  }, 4000);
   renderProgress();
   renderTimer();
   renderPage(false);
   void refreshStats();
+  void pollRobotHabits();
   if (restored)
     notify("Your session was restored paused. Resume whenever you’re ready.");
 
