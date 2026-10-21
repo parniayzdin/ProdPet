@@ -1,32 +1,35 @@
-# Productivity
+# rpodpet
 
-A responsive dashboard for focused work, points, and daily progress.
+A desk companion that makes studying more rewarding. Built at **Hack the Valley 11**.
 
-## Run
+<p align="center">
+  <img src="docs/images/robot.png" alt="Our white desk robot with OLED eyes and an ESP32 camera" width="300">
+</p>
+
+## The idea
+
+- **Focus:** track study sessions, points, and daily progress.
+- **Play:** unlock decorations for your robot's room.
+- **Compete:** study with friends in timed focus races.
+- **Connect:** pair the dashboard with our ESP32 robot prototype.
+
+## Project versions
+
+| Branch | What's inside |
+| --- | --- |
+| [`main`](https://github.com/parniayzdin/rpodpet/tree/main) | Original dashboard, Python hardware prototype, and printable robot parts |
+| [`robot-theme-game`](https://github.com/parniayzdin/rpodpet/tree/robot-theme-game) | Updated theme, accounts, room rewards, friend races, and USB eye control |
+| [`feature/backend`](https://github.com/parniayzdin/rpodpet/tree/feature/backend) | Supabase authentication, Tiger stats, and robot habit integration |
+
+These versions are not fully merged. Dashboard timers measure self-reported focus time.
+
+## Run the main dashboard
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
-Create a production build with `npm run build`, then run `npm run preview` to preview it.
+Open the local URL shown in your terminal. Run `npm run build` for a production build.
 
-## Current features
-
-- 15, 25, and 50-minute sessions with start, pause, resume, and early finish.
-- 10 points per whole minute in a completed session. Sessions shorter than a minute earn no points.
-- Today's focus time, a 120-minute daily goal, daily streaks, and a seven-day chart.
-- Recent sessions and cumulative reward milestones, saved in browser local storage.
-- Responsive layout and keyboard-accessible controls.
-
-Tracking is manual: the timer measures self-reported focus time, not verified productivity. Pause it during breaks. Only completed sessions are persisted; leaving during a session prompts a warning. Data is local to this browser and is not synced between devices or tabs.
-
-Webcam AI and robot sounds/vibration are not connected yet. No camera permission is requested and no video is collected. The companion panel is a placeholder for the later hardware integration.
-
-## Structure
-
-- `index.html`: dashboard layout
-- `src/style.css`: responsive styling
-- `src/main.js`: timer, rewards, chart, and local persistence
-
-Fonts are loaded from Google Fonts, with system fallbacks if offline.
+[Dashboard details](docs/dashboard.md) · Hardware setup is documented at the top of [`robot.py`](robot.py).
