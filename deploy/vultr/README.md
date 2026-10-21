@@ -2,7 +2,7 @@
 
 Vultr hosts the dashboard, account API, saved progress, and shared friend races at one HTTPS address. This lets classmates use the same service from different laptops. The physical robot and its camera stay connected to the student's laptop.
 
-This is deployment preparation, not a live Vultr deployment. No server has been purchased or provisioned. The team's Tiger integration has not been pushed yet; the current branch still uses JSON files for storage. This setup does not claim a Tiger connection.
+This is deployment preparation, not a live Vultr deployment. No server has been purchased or provisioned. By default this deploys local Node accounts and JSON storage. Optional Supabase login requires the build and runtime values below plus a separately hosted FastAPI backend; see ../../backend/README.md.
 
 ## Resources
 
@@ -34,8 +34,8 @@ ssh YOUR_SSH_USER@YOUR_SERVER_IP
 Run the following **on the Vultr server**, using a user with Docker access. If Docker requires root, prefix the Docker commands with `sudo`.
 
 ```sh
-git clone --branch robot-theme-game https://github.com/parniayzdin/productivity-dashboard.git
-cd productivity-dashboard/deploy/vultr
+git clone https://github.com/parniayzdin/ProdPet.git
+cd ProdPet/deploy/vultr
 cp .env.example .env
 nano .env
 ```
@@ -44,7 +44,7 @@ Set `APP_DOMAIN` to your actual hostname and `ACME_EMAIL` to your email. The exa
 
 ## 3. Build and start
 
-From `productivity-dashboard/deploy/vultr` on the server:
+From `ProdPet/deploy/vultr` on the server:
 
 ```sh
 docker compose version
@@ -95,3 +95,8 @@ The existing dashboard's Web Serial connection can access a robot attached to th
 - If using the existing local development setup instead, keep `npm start` and `npm run dev` running in separate terminals.
 
 References: [Vultr Docker Marketplace](https://docs.vultr.com/how-to-use-vultrs-docker-marketplace-application), [Caddy automatic HTTPS](https://caddyserver.com/docs/automatic-https), [Docker persistent volumes](https://docs.docker.com/reference/compose-file/volumes).
+
+
+## Optional Supabase and Tiger
+
+To use cloud accounts, set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_API_URL` in `deploy/vultr/.env`, then rebuild with `docker compose up -d --build`. These public frontend settings are baked into the dashboard; the Node service receives the matching Supabase values for race authentication. Never use a service-role key here. Host the FastAPI API separately with `SUPABASE_URL`, `DATABASE_URL`, and `FRONTEND_ORIGIN` set for your HTTPS site. This Compose file does not deploy the Python API or the physical robot.

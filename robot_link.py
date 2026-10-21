@@ -2,7 +2,8 @@
 Robot link - lets the productivity website talk to robot.py (same laptop).
 
 robot.py starts this automatically. It serves a tiny local API on http://127.0.0.1:8765
-(only reachable from this laptop - no video ever leaves robot.py, only short summaries):
+(only reachable from this laptop; this bridge returns summaries, not video.
+robot.py separately sends snapshots to the Gemini API when configured):
 
   GET  /state             robot status: connected, face, at desk, sitting time, last Gemini verdict
   GET  /checks?since=ID   Gemini checks newer than ID (status, reason, confidence, tip)
@@ -17,6 +18,7 @@ Try the website without the robot:   python robot_link.py --demo
 import json
 import threading
 import time
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -27,6 +29,7 @@ class RobotLink:
     def __init__(self):
         self.lock = threading.Lock()
         self.state = {"robot": "starting", "board": False, "camera": False, "face": "idle",
+                      "instance_id": str(uuid.uuid4()),
                       "present": False, "sit_seconds": 0, "verdict": None, "session": False, "web_face": None,
                       "updated": time.time()}
         self.checks = []                       # newest last

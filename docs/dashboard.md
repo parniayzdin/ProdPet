@@ -1,7 +1,18 @@
-﻿# Productivity
+# Dashboard and robot guide
 
 A study dashboard with personal accounts, robot room rewards, and shared focus races.
 
+
+The default setup uses local Node accounts. Setting both `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the root `.env` selects Supabase email login after restarting Vite or rebuilding. The Node race server loads the same `.env` and verifies cloud identities separately from race membership tokens. Local and Supabase accounts have separate progress; switching modes does not migrate accounts.
+
+## Python robot bridge
+
+1. Follow the setup at the top of `robot.py`, configure the camera IP and serial port, and set `GEMINI_API_KEY` in your shell.
+2. Run `python robot.py` on the same laptop as the browser. Its local bridge listens on port 8765. The robot firmware expected by that script is `robot_step3.ino`; that sketch is not included here, so get it from the hardware teammate. The included OLED-only sketch is for the separate USB eyes mode.
+3. Start or pause a dashboard session. The dashboard sends timer state to the bridge and displays its feedback. In Supabase mode, bad-habit checks during the active session can subtract points through the Python API.
+4. Use either Python's USB connection or **Connect robot** in the browser. They cannot own the same serial port together. Hardware and firmware still require an end-to-end test on the physical robot.
+
+`python robot_link.py --demo` provides simulated bridge responses for testing. The dashboard's **Timer activity** percentage measures timer ticks, not camera-verified attention. Camera snapshots sent to Gemini are processed by that service. The browser itself does not request webcam access. Hosted HTTPS pages may require browser local-network permission to reach the robot bridge.
 ## Run
 
 ```sh
@@ -29,7 +40,7 @@ Hash settings follow the [OWASP scrypt guidance](https://cheatsheetseries.owasp.
 
 ### Host on Vultr
 
-See [the Vultr deployment guide](deploy/vultr/README.md) for the Docker setup that runs the app and login API behind HTTPS, with persistent account data and shared friend races. Deployment files are included; a Vultr account, server, and domain still need to be configured. The team's unpushed Tiger integration is not connected in this branch yet.
+See [the Vultr deployment guide](../deploy/vultr/README.md) for the Docker setup that runs the app and login API behind HTTPS, with persistent account data and shared friend races. Deployment files are included; a Vultr account, server, and domain still need to be configured. Optional Supabase/Tiger configuration is documented in [the backend guide](../backend/README.md).
 
 ### Friends on separate laptops
 
@@ -70,7 +81,7 @@ Race usernames, readiness, and focus times are shared with the room. Your accoun
 
 ## Hardware and camera
 
-The team’s six STL files and the original `firmware/robot_eyes/robot_eyes.ino` from `oled-eyes` are included unchanged. The dashboard can now control that firmware's OLED eyes over USB. Camera head tracking, motors, sound, and vibration are not connected. No camera permissions are requested and no video is collected.
+The team’s six STL files and the original `firmware/robot_eyes/robot_eyes.ino` from `oled-eyes` are included unchanged. The dashboard can now control that firmware's OLED eyes over USB. The optional Python camera and servo prototype runs separately; see the bridge setup below. Direct USB control handles OLED expressions only.
 
 ### Connect the OLED eyes
 
@@ -93,6 +104,6 @@ Browser implementation reference: [Chrome Web Serial documentation](https://deve
 
 ## Artwork
 
-`public/robots/hello.png`, `study.png`, and `celebrate.png` are transparent digital illustrations inspired by the team's physical robot. They were generated with the built-in image generation tool. The photo itself and its social-media UI are not included. Exact generation prompts are recorded in `public/robots/prompts.json`.
+`public/robots/hello.png`, `study.png`, and `celebrate.png` are transparent digital illustrations inspired by the team's physical robot. They were generated with the built-in image generation tool. The README uses a photo of the physical robot with its background removed. Exact generation prompts are recorded in `public/robots/prompts.json`.
 
 The favicon and room decorations are code-native vector/CSS assets. Google Fonts supplies DM Sans and Manrope, with system-font fallbacks.

@@ -12,6 +12,7 @@ import { resolve, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { RaceStore, RaceError } from "./races.js";
 import { AccountStore, publicAccount, sessionCookie } from "./accounts.js";
+import { createCloudAuth } from "./cloud-auth.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const dataDir = resolve(root, ".data");
@@ -19,6 +20,7 @@ const dataFile = resolve(dataDir, "races.json");
 export function createApp({
   store,
   accounts,
+  cloudAuth = createCloudAuth(),
   secureCookies = process.env.NODE_ENV === "production",
 } = {}) {
   if (!accounts) {
@@ -140,7 +142,11 @@ export function createApp({
           res.setHeader("Set-Cookie", sessionCookie(token, secureCookies));
           return send(res, 200, { user: publicAccount(user) });
         }
-        const user = accounts.authenticate(req);
+        const cloudToken = req.headers["x-supabase-token"];
+        const user =
+          cloudToken && parts[1] === "rooms"
+            ? await cloudAuth(cloudToken)
+            : accounts.authenticate(req);
         if (url.pathname === "/api/auth/session" && req.method === "GET")
           return send(res, 200, { user: publicAccount(user) });
         if (url.pathname === "/api/auth/logout" && req.method === "POST") {

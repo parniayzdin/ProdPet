@@ -1,35 +1,28 @@
 # ProdPet (Hack the Valley 2026)
 
-A desk companion that makes studying more rewarding. Built at **Hack the Valley 11**.
+A robotic study companion that helps students stay focused and build better study habits. Built at **Hack the Valley 11**.
 
 <p align="center">
   <img src="docs/images/robot.png" alt="Our white desk robot with OLED eyes and an ESP32 camera" width="300">
 </p>
 
-## The idea
-
 - **Focus:** track study sessions, points, and daily progress.
 - **Play:** unlock decorations for your robot's room.
 - **Compete:** study with friends in timed focus races.
-- **Connect:** pair the dashboard with our ESP32 robot prototype.
+- **Connect:** get feedback from the ESP32 camera and Gemini robot prototype.
 
-## Project versions
+## Run
 
-| Branch | What's inside |
-| --- | --- |
-| [`main`](https://github.com/parniayzdin/rpodpet/tree/main) | Original dashboard, Python hardware prototype, and printable robot parts |
-| [`robot-theme-game`](https://github.com/parniayzdin/rpodpet/tree/robot-theme-game) | Updated theme, accounts, room rewards, friend races, and USB eye control |
-| [`feature/backend`](https://github.com/parniayzdin/rpodpet/tree/feature/backend) | Supabase authentication, Tiger stats, and robot habit integration |
-
-These versions are not fully merged. Dashboard timers measure self-reported focus time.
-
-## Run the main dashboard
+Use Node 22 or newer:
 
 ```sh
 npm ci
-npm run dev
+npm run build
+npm start
 ```
 
-Open the local URL shown in your terminal. Run `npm run build` for a production build.
+Open **http://127.0.0.1:4173** and create a local account. For development, keep `npm start` running and use `npm run dev` in a second terminal.
 
-[Dashboard details](docs/dashboard.md) · Hardware setup is documented at the top of [`robot.py`](robot.py).
+All project branches are now combined in `main`. Local accounts work without cloud credentials; Supabase login and Tiger storage are optional. Timers measure self-reported focus time, while the robot provides separate camera-based feedback.
+
+[Dashboard & robot setup](docs/dashboard.md) · [Supabase & Tiger setup](backend/README.md) · [Vultr deployment](deploy/vultr/README.md)

@@ -5,6 +5,10 @@ RUN npm ci
 COPY index.html vite.config.js ./
 COPY src ./src
 COPY public ./public
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_API_URL
+ARG VITE_ROBOT_LINK_URL
 RUN npm run build
 
 FROM node:22-alpine AS runtime

@@ -25,17 +25,14 @@
         <h1 id="auth-title">Welcome back</h1>
         <p class="auth-intro">Log in to save your progress.</p>
         <form id="auth-form">
-          <label for="auth-username">Username</label>
+          <label for="auth-email">Email</label>
           <input
-            id="auth-username"
-            name="username"
-            autocomplete="username"
+            id="auth-email"
+            name="email"
+            type="email"
+            autocomplete="email"
             autocapitalize="none"
             spellcheck="false"
-            minlength="3"
-            maxlength="24"
-            pattern="[A-Za-z0-9_]{3,24}"
-            title="3–24 letters, numbers, or underscores"
             required
           />
           <label for="auth-password">Password</label>
@@ -45,11 +42,12 @@
             type="password"
             autocomplete="current-password"
             maxlength="128"
+            minlength="6"
             required
             aria-describedby="password-hint"
           />
           <p id="password-hint" class="quiet-note" hidden>
-            At least 15 characters. Try a memorable phrase.
+            At least 6 characters.
           </p>
           <div id="auth-confirm-wrap" hidden>
             <label for="auth-confirm">Confirm password</label
@@ -198,6 +196,10 @@
             <div>
               <span>Daily streak</span
               ><strong id="streak-total">0 <small>days</small></strong>
+            </div>
+            <div>
+              <span>Timer activity</span
+              ><strong id="desk-quality">— <small>%</small></strong>
             </div>
             <a href="#quest" class="quest-teaser"
               ><span class="teaser-star" aria-hidden="true">✦</span>
@@ -548,7 +550,7 @@
         </section>
         <footer>
           <span id="save-status">Progress saved to your account</span
-          ><span>USB eye control available · Camera AI not connected</span>
+          ><span>Robot feedback via USB or the local Python bridge</span>
         </footer>
       </main>
       <div
