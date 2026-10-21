@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "vite --host 127.0.0.1", "build": "vite build", "preview": "vite preview --host 127.0.0.1" },
-  "devDependencies": { "vite": "^6.4.1" }
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test src/focus.test.js src/robot.test.js server/races.test.js server/accounts.test.js",
+    "start": "node server/index.js",
+    "share": "node server/index.js --share"
+  },
+  "devDependencies": {
+    "vite": "^6.4.1"
+  }
 }

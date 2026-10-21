@@ -1,0 +1,18 @@
+# Only application sources enter the build context. No local accounts or keys.
+**
+!Dockerfile
+!.dockerignore
+!package.json
+!package-lock.json
+!index.html
+!vite.config.js
+!src
+!src/**
+!server
+!server/**
+!public
+!public/**
+**/*.test.js
+**/.env*
+**/*.pem
+**/*.key
