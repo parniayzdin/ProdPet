@@ -1,4 +1,4 @@
-# rpodpet
+# ProPet (Hack the Valley 2026)
 
 A desk companion that makes studying more rewarding. Built at **Hack the Valley 11**.
 
