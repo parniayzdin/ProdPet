@@ -12,6 +12,16 @@
 !server/**
 !public
 !public/**
+!backend
+!backend/**
+backend/.bundle/
+backend/log/
+backend/tmp/
+backend/storage/
+backend/vendor/
+backend/test/
+backend/*.db
+backend/*.db-*
 **/*.test.js
 **/.env*
 **/*.pem

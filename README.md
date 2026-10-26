@@ -25,4 +25,8 @@ Open **http://127.0.0.1:4173** and create a local account. For development, keep
 
 All project branches are now combined in `main`. Local accounts work without cloud credentials; Supabase login and Tiger storage are optional. Timers measure self-reported focus time, while the robot provides separate camera-based feedback.
 
-[Dashboard & robot setup](docs/dashboard.md) · [Supabase & Tiger setup](backend/README.md) · [Vultr deployment](deploy/vultr/README.md)
+The optional session API now uses **Ruby on Rails 8.1**. Start with the
+[backend setup and Rails walkthrough](backend/README.md) to learn routes,
+controllers, models, migrations, and tests. Python still handles the robot vision.
+
+[Dashboard & robot setup](docs/dashboard.md) · [Rails, Supabase & database setup](backend/README.md) · [Vultr deployment](deploy/vultr/README.md)

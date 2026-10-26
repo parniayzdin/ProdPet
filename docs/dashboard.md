@@ -9,7 +9,7 @@ The default setup uses local Node accounts. Setting both `VITE_SUPABASE_URL` and
 
 1. Follow the setup at the top of `robot.py`, configure the camera IP and serial port, and set `GEMINI_API_KEY` in your shell.
 2. Run `python robot.py` on the same laptop as the browser. Its local bridge listens on port 8765. The robot firmware expected by that script is `robot_step3.ino`; that sketch is not included here, so get it from the hardware teammate. The included OLED-only sketch is for the separate USB eyes mode.
-3. Start or pause a dashboard session. The dashboard sends timer state to the bridge and displays its feedback. In Supabase mode, bad-habit checks during the active session can subtract points through the Python API.
+3. Start or pause a dashboard session. The dashboard sends timer state to the bridge and displays its feedback. In Supabase mode, bad-habit checks during the active session can subtract points through the Rails API.
 4. Use either Python's USB connection or **Connect robot** in the browser. They cannot own the same serial port together. Hardware and firmware still require an end-to-end test on the physical robot.
 
 `python robot_link.py --demo` provides simulated bridge responses for testing. The dashboard's **Timer activity** percentage measures timer ticks, not camera-verified attention. Camera snapshots sent to Gemini are processed by that service. The browser itself does not request webcam access. Hosted HTTPS pages may require browser local-network permission to reach the robot bridge.
